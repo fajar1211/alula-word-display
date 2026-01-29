@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,26 @@ function safeText(v: string) {
 
 export default function PaymentRedirectPage({ kind }: { kind: PaymentRedirectKind }) {
   const { search } = useLocation();
+  const navigate = useNavigate();
   const copy = copyByKind[kind];
+
+  // Auto-redirect to home after Midtrans finish redirect.
+  const [secondsLeft, setSecondsLeft] = useState(3);
+
+  useEffect(() => {
+    const start = Date.now();
+    const interval = window.setInterval(() => {
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      const left = Math.max(0, 3 - elapsed);
+      setSecondsLeft(left);
+      if (left === 0) {
+        window.clearInterval(interval);
+        navigate("/", { replace: true });
+      }
+    }, 250);
+
+    return () => window.clearInterval(interval);
+  }, [navigate]);
 
   usePageSeo(`payment_${kind}`, {
     title: copy.title,
@@ -58,6 +77,10 @@ export default function PaymentRedirectPage({ kind }: { kind: PaymentRedirectKin
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-sm text-muted-foreground">{copy.hint}</p>
+
+            <p className="text-sm text-muted-foreground">
+              Mengarahkan ke Beranda{secondsLeft > 0 ? ` dalam ${secondsLeft} detik…` : "…"}
+            </p>
 
             {params.length > 0 ? (
               <div className="rounded-lg border">
