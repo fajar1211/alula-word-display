@@ -103,6 +103,7 @@ export default function Payment() {
     document.body.appendChild(s);
   }, [paypal.clientId]);
 
+  // PayPal should be usable whenever it's configured (Ready), even if provider auto-detection fails.
   const paypalButtonsEnabled = Boolean(paypal.ready && paypal.clientId);
 
   const baseTotalUsd = useMemo(() => {
@@ -364,7 +365,7 @@ export default function Payment() {
                 type="button"
                 variant={method === "paypal" ? "default" : "outline"}
                 onClick={() => setMethod("paypal")}
-                disabled={gateway == null || !paypalButtonsEnabled}
+                disabled={!paypalButtonsEnabled}
               >
                 PayPal
               </Button>
@@ -386,7 +387,7 @@ export default function Payment() {
                 {paypal.error ? <p className="text-sm text-muted-foreground">{paypal.error}</p> : null}
 
                 <PayPalButtonsSection
-                  disabled={gateway == null || !canComplete || paying || totalAfterPromoUsd == null || !paypalButtonsEnabled}
+                  disabled={!canComplete || paying || totalAfterPromoUsd == null || !paypalButtonsEnabled}
                   payload={{
                     amount_usd: totalAfterPromoUsd ?? 0,
                     subscription_years: state.subscriptionYears ?? 0,
