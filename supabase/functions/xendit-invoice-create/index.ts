@@ -167,10 +167,13 @@ Deno.serve(async (req) => {
       const errCode = String((invoiceJson as any)?.error_code ?? "").toUpperCase();
       const errMsg = String((invoiceJson as any)?.message ?? "");
       const isInvalidKey = errCode === "INVALID_API_KEY" || /invalid api key/i.test(errMsg);
+      const isForbidden = errCode === "REQUEST_FORBIDDEN_ERROR" || /forbidden/i.test(errMsg) || /doesn't have sufficient permissions/i.test(errMsg);
 
       const friendlyError = isInvalidKey
         ? "Xendit API key invalid. Please configure the Xendit *Secret* API Key (xnd_development_... / xnd_production_...) in Super Admin → Integrations."
-        : "Xendit invoice create failed";
+        : isForbidden
+          ? "Xendit API key is valid but forbidden for this endpoint (missing permission). In Xendit Dashboard, adjust the API key permissions / roles to allow Invoice creation (v2/invoices), or generate a new Secret key with the required access."
+          : "Xendit invoice create failed";
 
       return new Response(JSON.stringify({ ok: false, error: friendlyError, xendit: invoiceJson }), {
         status: 400,
