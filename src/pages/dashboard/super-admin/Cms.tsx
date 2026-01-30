@@ -20,6 +20,7 @@ import { SchemaIntegrationCard } from "@/components/super-admin/SchemaIntegratio
 import { useSchemaIntegration } from "@/pages/dashboard/super-admin/useSchemaIntegration";
 import { MidtransIntegrationCard } from "@/components/super-admin/MidtransIntegrationCard";
 import { useMidtransIntegration } from "@/pages/dashboard/super-admin/useMidtransIntegration";
+import { XenditIntegrationCard } from "@/components/super-admin/XenditIntegrationCard";
 
 const GSC_SETTINGS_FN = "super-admin-gsc-settings";
 
@@ -50,6 +51,30 @@ export default function SuperAdminCms() {
   const [gscConfigured, setGscConfigured] = useState(false);
   const [gscUpdatedAt, setGscUpdatedAt] = useState<string | null>(null);
   const [gscMasked, setGscMasked] = useState<string | null>(null);
+
+  const [xenditApiKey, setXenditApiKey] = useState("");
+  const [xenditConfigured, setXenditConfigured] = useState(false);
+  const [xenditUpdatedAt, setXenditUpdatedAt] = useState<string | null>(null);
+
+  const fetchXenditStatus = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await invokeWithAuth<any>("super-admin-xendit-secret", { action: "get" });
+      if (error) throw error;
+      setXenditConfigured(Boolean((data as any)?.configured));
+      setXenditUpdatedAt(((data as any)?.updated_at ?? null) as string | null);
+    } catch (e: any) {
+      console.error(e);
+      if (String(e?.message ?? "").toLowerCase().includes("unauthorized")) {
+        toast.error("Your session has expired. Please sign in again.");
+        navigate("/super-admin/login", { replace: true });
+        return;
+      }
+      toast.error(e?.message || "Unable to load Xendit status.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchGa4Status = async () => {
     setLoading(true);
@@ -120,7 +145,45 @@ export default function SuperAdminCms() {
     fetchDomainDuckStatus();
     fetchGa4Status();
     fetchGscStatus();
+    fetchXenditStatus();
   }, []);
+
+  const onSaveXenditApiKey = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const v = xenditApiKey.trim();
+      if (!v) throw new Error("API key is required.");
+      if (/\s/.test(v) || v.length < 8) throw new Error("Invalid API key.");
+
+      const { error } = await invokeWithAuth<any>("super-admin-xendit-secret", { action: "set", api_key: v });
+      if (error) throw error;
+
+      setXenditApiKey("");
+      toast.success("Xendit API key has been saved.");
+      await fetchXenditStatus();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Unable to save Xendit API key.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onClearXenditApiKey = async () => {
+    setLoading(true);
+    try {
+      const { error } = await invokeWithAuth<any>("super-admin-xendit-secret", { action: "clear" });
+      if (error) throw error;
+      toast.success("Xendit API key has been reset.");
+      await fetchXenditStatus();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Unable to reset Xendit API key.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onSaveGa4 = async (e: FormEvent) => {
     e.preventDefault();
@@ -418,6 +481,16 @@ export default function SuperAdminCms() {
           serverKeyValue={midtrans.serverKeyValue}
           onServerKeyChange={midtrans.setServerKeyValue}
           onSaveApiKeys={midtrans.onSaveApiKeys}
+        />
+
+        <XenditIntegrationCard
+          loading={loading}
+          status={{ configured: xenditConfigured, updatedAt: xenditUpdatedAt }}
+          apiKeyValue={xenditApiKey}
+          onApiKeyChange={setXenditApiKey}
+          onSave={onSaveXenditApiKey}
+          onRefresh={fetchXenditStatus}
+          onClear={onClearXenditApiKey}
         />
 
         <Card>

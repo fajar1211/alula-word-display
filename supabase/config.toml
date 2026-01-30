@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.super-admin-midtrans-payments]
 verify_jwt = false
+
+[functions.super-admin-xendit-secret]
+verify_jwt = false
