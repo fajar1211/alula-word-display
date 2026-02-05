@@ -36,17 +36,18 @@ export default function Home() {
             style={{ paddingTop: "calc(var(--homepage-promo-height, 0px) + clamp(0.002125rem, 0.0105vh, 0.00625rem))" }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground animate-fade-in">
-              {t("home.h1a")} <span className="text-gradient">{t("home.h1b")}</span>
+              <span className="block">{t("home.h1a")}</span>
+              <span className="block text-gradient">{t("home.h1b")}</span>
             </h1>
 
             <p
-              className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in"
+              className="mt-4 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in"
               style={{ animationDelay: "0.1s" }}
             >
               {t("home.heroSub")}
             </p>
 
-            <div className="mt-10 mx-auto max-w-2xl animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            <div className="mt-6 mx-auto max-w-2xl animate-fade-in" style={{ animationDelay: "0.2s" }}>
               <DomainSearchBar
                 onSubmit={(domain) => {
                   navigate(`/order/choose-domain?domain=${encodeURIComponent(domain)}`);
@@ -55,7 +56,7 @@ export default function Home() {
             </div>
 
             <div
-              className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-muted-foreground animate-fade-in"
+              className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-muted-foreground animate-fade-in"
               style={{ animationDelay: "0.3s" }}
             >
               {[t("home.heroPill1"), t("home.heroPill2"), t("home.heroPill3")].map((item) => (
