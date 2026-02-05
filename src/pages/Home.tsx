@@ -8,6 +8,7 @@ import { DomainSearchBar } from "@/components/order/DomainSearchBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useI18n } from "@/hooks/useI18n";
 import { getHomeContent } from "@/pages/home/homeContent";
+import heroHome from "@/assets/hero-home.jpg";
 export default function Home() {
   const navigate = useNavigate();
   const {
@@ -25,7 +26,19 @@ export default function Home() {
   });
   return <PublicLayout>
       {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero py-20 md:py-32 min-h-[calc(100vh-5rem)] flex items-center">
+      <section className="relative overflow-hidden py-20 md:py-32 min-h-[calc(100vh-5rem)] flex items-center">
+        {/* Background Image + Overlay */}
+        <div className="absolute inset-0 -z-10">
+          <img
+            src={heroHome}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/90 to-background/80" />
+        </div>
+
         {/* Promo banner overlays the hero (does not push content down) */}
         <div className="absolute inset-x-0 top-6 z-20">
           <HomePromoBanner />
@@ -65,8 +78,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_40%_at_50%_60%,hsl(var(--primary)/0.1),transparent)]" />
       </section>
 
       {/* How It Works */}
