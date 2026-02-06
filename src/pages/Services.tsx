@@ -290,14 +290,11 @@ export default function Services() {
       const picked = pickSettingsValueForLang(data?.value, lang);
       if (picked) {
         setContent(sanitizeServices(picked, fallback));
-        return;
       }
 
-      // Backwards-compat: if settings are monolingual, treat them as Indonesian only
-      // so EN toggle still switches to EN fallback text.
-      if (lang === "id") {
-        setContent(sanitizeServices(data?.value, fallback));
-      }
+      // If settings are monolingual, we intentionally ignore them here so the
+      // language toggle always drives the public content consistently.
+      // (Admin can store bilingual settings under { id: ..., en: ... }.)
     })();
   }, [fallback, lang]);
 
