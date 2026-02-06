@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { OrderLayout } from "@/components/order/OrderLayout";
 import { useOrder } from "@/contexts/OrderContext";
 import { useOrderPublicSettings, type OrderTemplate } from "@/hooks/useOrderPublicSettings";
@@ -18,6 +25,10 @@ export default function ChooseDesign() {
   const { templates } = useOrderPublicSettings();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<OrderTemplate["category"] | "all">("all");
+
+  // Keep UI simple: 6 templates per page (matches the current perceived limit).
+  const pageSize = 6;
+  const [page, setPage] = useState(1);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -39,7 +50,50 @@ export default function ChooseDesign() {
     return [...list].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   }, [category, query, templates]);
 
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  useEffect(() => {
+    // Reset to page 1 when filters change.
+    setPage(1);
+  }, [query, category]);
+
+  useEffect(() => {
+    // Clamp in case templates list changes while user is on a later page.
+    setPage((p) => Math.min(Math.max(1, p), pageCount));
+  }, [pageCount]);
+
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
   const selected = state.selectedTemplateId;
+
+  const pageItems = useMemo(() => {
+    if (pageCount <= 1) return [] as Array<number | "ellipsis">;
+
+    const items: Array<number | "ellipsis"> = [];
+    const add = (v: number | "ellipsis") => items.push(v);
+
+    const maxNumbers = 5; // show up to 5 page numbers
+
+    if (pageCount <= maxNumbers + 2) {
+      for (let i = 1; i <= pageCount; i++) add(i);
+      return items;
+    }
+
+    add(1);
+
+    const left = Math.max(2, page - 1);
+    const right = Math.min(pageCount - 1, page + 1);
+
+    if (left > 2) add("ellipsis");
+    for (let i = left; i <= right; i++) add(i);
+    if (right < pageCount - 1) add("ellipsis");
+
+    add(pageCount);
+    return items;
+  }, [page, pageCount]);
 
   return (
     <OrderLayout title={t("order.step.design")} step="design" sidebar={null}>
@@ -74,7 +128,7 @@ export default function ChooseDesign() {
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((tmplt) => {
+          {paged.map((tmplt) => {
             const isSelected = selected === tmplt.id;
             const previewImg = String((tmplt as any)?.preview_image_url ?? "").trim();
             const demoUrl = String(tmplt.preview_url ?? "").trim();
@@ -135,6 +189,65 @@ export default function ChooseDesign() {
             );
           })}
         </div>
+
+        {pageCount > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationLink
+                  href="#"
+                  size="default"
+                  aria-label={t("order.pagination.previous")}
+                  className="gap-1 pl-2.5"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage((p) => Math.max(1, p - 1));
+                  }}
+                >
+                  <span>{t("order.pagination.previous")}</span>
+                </PaginationLink>
+              </PaginationItem>
+
+              {pageItems.map((it, idx) =>
+                it === "ellipsis" ? (
+                  <PaginationItem key={`e-${idx}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={it}>
+                    <PaginationLink
+                      href="#"
+                      size="icon"
+                      isActive={it === page}
+                      aria-label={`Page ${it}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(it);
+                      }}
+                    >
+                      {it}
+                    </PaginationLink>
+                  </PaginationItem>
+                ),
+              )}
+
+              <PaginationItem>
+                <PaginationLink
+                  href="#"
+                  size="default"
+                  aria-label={t("order.pagination.next")}
+                  className="gap-1 pr-2.5"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage((p) => Math.min(pageCount, p + 1));
+                  }}
+                >
+                  <span>{t("order.pagination.next")}</span>
+                </PaginationLink>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
 
         <div className="flex items-center justify-between gap-3">
           <Button type="button" variant="outline" onClick={() => navigate("/order/choose-domain")}> 

@@ -89,6 +89,8 @@ export const dict: Dict = {
   "order.select": { id: "Pilih", en: "Select" },
   "order.selected": { id: "Dipilih", en: "Selected" },
   "order.continueDetails": { id: "Lanjut ke Data", en: "Continue to Details" },
+  "order.pagination.previous": { id: "Sebelumnya", en: "Previous" },
+  "order.pagination.next": { id: "Berikutnya", en: "Next" },
 
   // Details
   "order.contactInfo": { id: "Informasi kontak", en: "Contact information" },
