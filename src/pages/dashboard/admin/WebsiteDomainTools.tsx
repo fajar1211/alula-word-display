@@ -430,27 +430,16 @@ export default function WebsiteDomainTools() {
                     type="button"
                     onClick={() => {
                       const id = `t${Date.now()}`;
-                      setTemplates((prev) => {
-                        const baseCategory =
-                          templateCategoryFilter !== "all" && templateCategoryFilter
-                            ? (templateCategoryFilter as any)
-                            : ((categories[0]?.name ?? "business") as any);
-
-                        const maxSortInCategory = prev
-                          .filter((t) => String(t.category ?? "").trim() === String(baseCategory ?? "").trim())
-                          .reduce((max, t) => Math.max(max, Number(t.sort_order ?? 0)), 0);
-
-                        return [
-                          ...prev,
-                          {
-                            id,
-                            name: "New Template",
-                            category: baseCategory,
-                            is_active: true,
-                            sort_order: maxSortInCategory + 1,
-                          },
-                        ];
-                      });
+                      setTemplates((prev) => [
+                        ...prev,
+                        {
+                          id,
+                          name: "New Template",
+                          category: (categories[0]?.name ?? "business") as any,
+                          is_active: true,
+                          sort_order: prev.length + 1,
+                        },
+                      ]);
                       setDraftTemplateId(id);
                       setEditTemplateId(id);
                     }}
