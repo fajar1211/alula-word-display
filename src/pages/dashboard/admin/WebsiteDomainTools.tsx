@@ -28,7 +28,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
@@ -193,29 +192,47 @@ export default function WebsiteDomainTools() {
     return filteredTemplates.slice(start, start + TEMPLATE_PAGE_SIZE);
   }, [filteredTemplates, templatePage]);
 
+  type TemplatePageItem =
+    | { kind: "page"; page: number }
+    | { kind: "jump"; direction: "prev" | "next" };
+
   const templatePageItems = useMemo(() => {
-    if (totalTemplatePages <= 1) return [] as Array<number | "ellipsis">;
+    if (totalTemplatePages <= 1) return [] as TemplatePageItem[];
 
-    const items: Array<number | "ellipsis"> = [];
-    const add = (v: number | "ellipsis") => items.push(v);
+    // UI: show max 3 page numbers around the active page.
+    const windowSize = 3;
 
-    const maxNumbers = 5; // show up to 5 page numbers
+    let start = templatePage - 1;
+    let end = templatePage + 1;
 
-    if (totalTemplatePages <= maxNumbers + 2) {
-      for (let i = 1; i <= totalTemplatePages; i++) add(i);
-      return items;
+    // Shift the window when near edges
+    if (start < 1) {
+      end += 1 - start;
+      start = 1;
+    }
+    if (end > totalTemplatePages) {
+      start -= end - totalTemplatePages;
+      end = totalTemplatePages;
     }
 
-    add(1);
+    start = Math.max(1, start);
+    end = Math.min(totalTemplatePages, end);
 
-    const left = Math.max(2, templatePage - 1);
-    const right = Math.min(totalTemplatePages - 1, templatePage + 1);
+    // Enforce max length
+    if (end - start + 1 > windowSize) {
+      end = start + windowSize - 1;
+    }
 
-    if (left > 2) add("ellipsis");
-    for (let i = left; i <= right; i++) add(i);
-    if (right < totalTemplatePages - 1) add("ellipsis");
+    const items: TemplatePageItem[] = [];
 
-    add(totalTemplatePages);
+    // Ellipsis (jump -3)
+    if (start > 1) items.push({ kind: "jump", direction: "prev" });
+
+    for (let i = start; i <= end; i++) items.push({ kind: "page", page: i });
+
+    // Ellipsis (jump +3)
+    if (end < totalTemplatePages) items.push({ kind: "jump", direction: "next" });
+
     return items;
   }, [templatePage, totalTemplatePages]);
 
@@ -502,28 +519,43 @@ export default function WebsiteDomainTools() {
                         </PaginationLink>
                       </PaginationItem>
 
-                      {templatePageItems.map((it, idx) =>
-                        it === "ellipsis" ? (
-                          <PaginationItem key={`e-${idx}`}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        ) : (
-                          <PaginationItem key={it}>
+                      {templatePageItems.map((it, idx) => {
+                        if (it.kind === "jump") {
+                          const isPrev = it.direction === "prev";
+                          return (
+                            <PaginationItem key={`jump-${it.direction}-${idx}`}>
+                              <PaginationLink
+                                href="#"
+                                size="icon"
+                                aria-label={isPrev ? "Jump back 3 pages" : "Jump forward 3 pages"}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setTemplatePage((p) => (isPrev ? Math.max(1, p - 3) : Math.min(totalTemplatePages, p + 3)));
+                                }}
+                              >
+                                ...
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        }
+
+                        return (
+                          <PaginationItem key={it.page}>
                             <PaginationLink
                               href="#"
                               size="icon"
-                              isActive={it === templatePage}
-                              aria-label={`Page ${it}`}
+                              isActive={it.page === templatePage}
+                              aria-label={`Page ${it.page}`}
                               onClick={(e) => {
                                 e.preventDefault();
-                                setTemplatePage(it);
+                                setTemplatePage(it.page);
                               }}
                             >
-                              {it}
+                              {it.page}
                             </PaginationLink>
                           </PaginationItem>
-                        ),
-                      )}
+                        );
+                      })}
 
                       <PaginationItem>
                         <PaginationLink
