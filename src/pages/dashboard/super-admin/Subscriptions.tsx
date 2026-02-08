@@ -88,10 +88,14 @@ export default function SuperAdminSubscriptions() {
       const defaultPackageId = String(payload?.default_package_id ?? "");
       const priceRows = Array.isArray(payload?.tld_prices) ? (payload.tld_prices as any[]) : [];
 
-      if (defaultPackageId) {
+      const isDefaultPkgValid = defaultPackageId && pkgOptions.some((p) => p.id === defaultPackageId);
+
+      if (isDefaultPkgValid) {
         setPricingPackageId(defaultPackageId);
       } else if (pkgOptions.length) {
         setPricingPackageId(pkgOptions[0].id);
+      } else {
+        setPricingPackageId("");
       }
 
       const normalized = priceRows
@@ -170,11 +174,12 @@ export default function SuperAdminSubscriptions() {
     setPricingSaving(true);
     try {
       const pkgId = String(pricingPackageId ?? "").trim() || String(packages?.[0]?.id ?? "").trim();
-      if (!pkgId) {
+      const isPkgValid = pkgId && packages.some((p) => p.id === pkgId);
+      if (!isPkgValid) {
         toast({
           variant: "destructive",
           title: "Save failed",
-          description: "No Package available for pricing context. Create/enable a package first.",
+          description: "Selected package is not valid anymore. Please refresh and select an existing package.",
         });
         return;
       }
