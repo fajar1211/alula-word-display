@@ -198,7 +198,7 @@ export function OrderWebsitePackagesCards() {
           Paket Website belum ditemukan. Pastikan ada paket bernama: {TARGET_NAMES.join(", ")}.
         </p>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-3">
           {packages.map((pkg) => (
             <WebsitePackageFlipCard key={pkg.id} pkg={pkg} />
           ))}
