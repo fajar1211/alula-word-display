@@ -150,8 +150,7 @@ export default function ChooseDomain() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">
-                      Dicek: 10 TLD favorit (.com, .id, .my.id, .biz.id, .co.id, .web.id, .net, .org, .online, .store). Hanya domain yang
-                      available ditampilkan.
+                      Dicek: 3 TLD favorit (.com, .id, .co.id). Hanya domain yang available ditampilkan.
                     </p>
                     <p className="text-xs text-muted-foreground">Hasil available: {availableItems.length}.</p>
                   </div>

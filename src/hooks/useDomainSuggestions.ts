@@ -16,7 +16,7 @@ type State = {
   items: DomainSuggestionItem[];
 };
 
-const FAVORITE_TLDS = [".com", ".id", ".my.id", ".biz.id", ".co.id", ".web.id", ".net", ".org", ".online", ".store"];
+const FAVORITE_TLDS = [".com", ".id", ".co.id"];
 
 function normalizeKeyword(raw: string) {
   const v = String(raw ?? "")
