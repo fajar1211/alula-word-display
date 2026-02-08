@@ -123,6 +123,16 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Validate package exists to avoid FK violation later
+      const { data: pkgRow, error: pkgErr } = await admin.from("packages").select("id").eq("id", pkgId).maybeSingle();
+      if (pkgErr) throw new Error(pkgErr.message);
+      if (!pkgRow) {
+        return new Response(JSON.stringify({ error: "Package tidak ditemukan untuk default_package_id tersebut." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const rows = Array.isArray((body as any).tld_prices) ? ((body as any).tld_prices as any[]) : [];
       const mapped = rows.map((r) => ({
         tld: normalizeTld(r?.tld),
