@@ -16,6 +16,25 @@ type State = {
   items: DomainSuggestionItem[];
 };
 
+const FAVORITE_TLDS = [".com", ".id", ".my.id", ".biz.id", ".co.id", ".web.id", ".net", ".org", ".online", ".store"];
+
+function normalizeKeyword(raw: string) {
+  const v = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "")
+    .replace(/\s+/g, "");
+  if (!v) return "";
+  return v.includes(".") ? v.split(".")[0] : v;
+}
+
+function buildCandidates(keyword: string) {
+  const k = normalizeKeyword(keyword);
+  if (!k) return [] as string[];
+  return FAVORITE_TLDS.map((tld) => `${k}${tld}`).slice(0, 10);
+}
+
 export function useDomainSuggestions(query: string, { enabled = true, debounceMs = 450 } = {}) {
   const [state, setState] = useState<State>({ loading: false, error: null, items: [] });
   const timer = useRef<number | null>(null);
@@ -23,7 +42,7 @@ export function useDomainSuggestions(query: string, { enabled = true, debounceMs
   useEffect(() => {
     if (!enabled) return;
 
-    const q = String(query ?? "").trim();
+    const q = normalizeKeyword(query);
     if (!q) {
       setState({ loading: false, error: null, items: [] });
       return;
@@ -32,23 +51,54 @@ export function useDomainSuggestions(query: string, { enabled = true, debounceMs
     if (timer.current) window.clearTimeout(timer.current);
 
     timer.current = window.setTimeout(async () => {
-      setState((s) => ({ ...s, loading: true, error: null }));
-      try {
-        const { data, error } = await supabase.functions.invoke("domainr-check", {
-          body: { query: q },
-        });
-        if (error) throw error;
+      const candidates = buildCandidates(q);
+      if (candidates.length === 0) {
+        setState({ loading: false, error: null, items: [] });
+        return;
+      }
 
-        const items = Array.isArray((data as any)?.items) ? ((data as any).items as any[]) : [];
+      setState((s) => ({ ...s, loading: true, error: null }));
+
+      try {
+        const results = await Promise.all(
+          candidates.map(async (domain) => {
+            try {
+              const { data, error } = await supabase.functions.invoke("domainduck-check", {
+                body: { domain },
+              });
+              if (error) throw error;
+              const availability = String((data as any)?.availability ?? "").toLowerCase();
+              return {
+                domain,
+                availability,
+              } as const;
+            } catch (e: any) {
+              return {
+                domain,
+                availability: "error",
+                error: e?.message ?? "Failed",
+              } as const;
+            }
+          }),
+        );
+
+        const items: DomainSuggestionItem[] = results
+          .filter((r) => r.availability === "true")
+          .map((r) => ({
+            domain: r.domain,
+            status: "available",
+            price_usd: null,
+            currency: null,
+          }));
+
+        // If all calls failed, surface one representative error
+        const allFailed = results.every((r) => r.availability === "error");
+        const firstErr = results.find((r: any) => r.availability === "error") as any;
+
         setState({
           loading: false,
-          error: null,
-          items: items.map((it) => ({
-            domain: String(it?.domain ?? ""),
-            status: (it?.status ?? "unknown") as DomainSuggestionStatus,
-            price_usd: typeof it?.price_usd === "number" ? it.price_usd : null,
-            currency: it?.currency ? String(it.currency) : null,
-          })),
+          error: allFailed ? (firstErr?.error ?? "Gagal cek domain") : null,
+          items,
         });
       } catch (e: any) {
         setState({ loading: false, error: e?.message ?? "Failed to fetch domain suggestions", items: [] });
