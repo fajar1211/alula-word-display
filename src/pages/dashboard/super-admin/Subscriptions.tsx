@@ -361,10 +361,10 @@ export default function SuperAdminSubscriptions() {
       <h1 className="text-3xl font-bold text-foreground">Website Packages</h1>
 
       <Tabs defaultValue="subscription" className="w-full">
-        <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
+        <TabsList className="w-full justify-center overflow-x-auto">
+          <TabsTrigger value="subscription">Plans</TabsTrigger>
           <TabsTrigger value="domain">Domain</TabsTrigger>
-          <TabsTrigger value="add-ons">Subscription Add-ons</TabsTrigger>
+          <TabsTrigger value="add-ons">Add-ons</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscription">
@@ -373,8 +373,8 @@ export default function SuperAdminSubscriptions() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <CardTitle>Subscription Plans (Website)</CardTitle>
-                    <CardDescription>Manage “Choose plan duration” options on /order/subscription.</CardDescription>
+                      <CardTitle>Website Plans</CardTitle>
+                      <CardDescription>Manage “Choose plan duration” options on /order/subscription.</CardDescription>
                   </div>
                   <Badge variant="outline">Total: {plansCountLabel}</Badge>
                 </div>
@@ -516,7 +516,7 @@ export default function SuperAdminSubscriptions() {
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <CardTitle>Subscription Add-ons</CardTitle>
+                  <CardTitle>Add-ons</CardTitle>
                   <CardDescription>Checklist add-ons yang tampil di bawah pilihan durasi pada /order/subscription.</CardDescription>
                 </div>
                 <Badge variant="outline">Total: {addOnsCountLabel}</Badge>
