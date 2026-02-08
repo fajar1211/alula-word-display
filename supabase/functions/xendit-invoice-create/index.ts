@@ -175,10 +175,10 @@ Deno.serve(async (req) => {
           ? "Xendit API key is valid but forbidden for this endpoint (missing permission). In Xendit Dashboard, adjust the API key permissions / roles to allow Invoice creation (v2/invoices), or generate a new Secret key with the required access."
           : "Xendit invoice create failed";
 
-      return new Response(JSON.stringify({ ok: false, error: friendlyError, xendit: invoiceJson }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+       return new Response(JSON.stringify({ ok: false, error: friendlyError, xendit: invoiceJson }), {
+         status: 200,
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
     }
 
     const invoice_url = typeof (invoiceJson as any)?.invoice_url === "string" ? (invoiceJson as any).invoice_url : null;
