@@ -5,16 +5,22 @@ import { useOrder } from "@/contexts/OrderContext";
 import { useOrderPublicSettings } from "@/hooks/useOrderPublicSettings";
 import { useOrderAddOns } from "@/hooks/useOrderAddOns";
 import { useI18n } from "@/hooks/useI18n";
+import { useMemo } from "react";
+import { usePackageDurations } from "@/hooks/usePackageDurations";
+import { computeDiscountedTotal } from "@/lib/packageDurations";
+
+const USD_TO_IDR_RATE = 16000;
+
+function formatIdr(value: number) {
+  return `Rp ${Math.round(value).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
+}
 
 export function OrderSummaryCard({ showEstPrice = true }: { showEstPrice?: boolean }) {
   const { t, lang } = useI18n();
   const { state } = useOrder();
-  const { contact, subscriptionPlans } = useOrderPublicSettings(state.domain, state.selectedPackageId);
+  const { contact, subscriptionPlans, pricing } = useOrderPublicSettings(state.domain, state.selectedPackageId);
+  const { rows: durationRows } = usePackageDurations(state.selectedPackageId);
   const { total: addOnsTotal } = useOrderAddOns({ packageId: state.selectedPackageId, quantities: state.addOns ?? {} });
-
-  const formatIdr = (value: number) => {
-    return `Rp ${Math.round(value).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
-  };
 
   const whatsappHref = (() => {
     const phone = (contact.whatsapp_phone ?? "").replace(/\D/g, "");
@@ -45,42 +51,89 @@ export function OrderSummaryCard({ showEstPrice = true }: { showEstPrice?: boole
       : `${state.subscriptionYears} year(s)`
     : "—";
 
-  const durationPriceIdr = (() => {
+  const discountByMonths = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const r of durationRows || []) {
+      if (r?.is_active === false) continue;
+      const months = Number((r as any).duration_months ?? 0);
+      const discount = Number((r as any).discount_percent ?? 0);
+      if (Number.isFinite(months) && months > 0) m.set(months, discount);
+    }
+    return m;
+  }, [durationRows]);
+
+  const baseTotalUsd = useMemo(() => {
     if (!showEstPrice) return null;
     if (!state.subscriptionYears) return null;
 
-    const selectedPlan = (subscriptionPlans || []).find((p: any) => Number(p?.years) === Number(state.subscriptionYears));
-    const v = Number((selectedPlan as any)?.price_usd ?? 0);
-    return Number.isFinite(v) && v > 0 ? v : null;
-  })();
+    const months = Number(state.subscriptionYears) * 12;
+    const discountPercent = discountByMonths.get(months) ?? 0;
 
-  const baseTotalUsd = (() => {
-    if (!showEstPrice) return null;
-    if (!state.subscriptionYears) return null;
+    // Prefer Duration & Discount config (package_durations) so it matches /order/subscription & /order/payment.
+    if (discountByMonths.size > 0) {
+      const domain = pricing.domainPriceUsd ?? null;
+      const pkg = pricing.packagePriceUsd ?? null;
+      if (domain == null || pkg == null) return null;
 
-    const durationOnly = durationPriceIdr;
-    if (durationOnly == null) return null;
+      const baseAnnual = domain + pkg;
+      const monthly = baseAnnual / 12;
+      return computeDiscountedTotal({ monthlyPrice: monthly, months, discountPercent }) + addOnsTotal;
+    }
 
-    return durationOnly + addOnsTotal;
-  })();
+    // Fallback to legacy website_settings.order_subscription_plans price override.
+    const selectedPlan = subscriptionPlans.find((p: any) => Number(p?.years) === Number(state.subscriptionYears));
+    const planOverrideUsd =
+      typeof (selectedPlan as any)?.price_usd === "number" && Number.isFinite((selectedPlan as any).price_usd)
+        ? Number((selectedPlan as any).price_usd)
+        : null;
+    if (planOverrideUsd != null) return planOverrideUsd + addOnsTotal;
 
+    const domainUsd = pricing.domainPriceUsd ?? null;
+    const pkgUsd = pricing.packagePriceUsd ?? null;
+    if (domainUsd == null || pkgUsd == null) return null;
 
-  const promoDiscountUsd = (() => {
+    return (domainUsd + pkgUsd) * state.subscriptionYears + addOnsTotal;
+  }, [addOnsTotal, discountByMonths, pricing.domainPriceUsd, pricing.packagePriceUsd, showEstPrice, state.subscriptionYears, subscriptionPlans]);
+
+  const promoDiscountUsd = useMemo(() => {
     const d = state.appliedPromo?.discountUsd ?? 0;
     if (!Number.isFinite(d) || d <= 0) return 0;
     return d;
-  })();
+  }, [state.appliedPromo?.discountUsd]);
 
-  const totalAfterPromoUsd = (() => {
+  const totalAfterPromoUsd = useMemo(() => {
     if (baseTotalUsd == null) return null;
     return Math.max(0, baseTotalUsd - promoDiscountUsd);
-  })();
+  }, [baseTotalUsd, promoDiscountUsd]);
 
-  const estTotalLabel = (() => {
+  const totalAfterPromoIdr = useMemo(() => {
+    if (totalAfterPromoUsd == null) return null;
+    return Math.max(0, Math.round(totalAfterPromoUsd * USD_TO_IDR_RATE));
+  }, [totalAfterPromoUsd]);
+
+  const baseTotalIdr = useMemo(() => {
+    if (baseTotalUsd == null) return null;
+    return Math.max(0, Math.round(baseTotalUsd * USD_TO_IDR_RATE));
+  }, [baseTotalUsd]);
+
+  const promoDiscountIdr = useMemo(() => {
+    if (!promoDiscountUsd) return 0;
+    return Math.max(0, Math.round(promoDiscountUsd * USD_TO_IDR_RATE));
+  }, [promoDiscountUsd]);
+
+  const addOnsTotalIdr = useMemo(() => {
+    if (!addOnsTotal) return 0;
+    return Math.max(0, Math.round(addOnsTotal * USD_TO_IDR_RATE));
+  }, [addOnsTotal]);
+
+  const durationPriceIdr = useMemo(() => {
     if (!showEstPrice) return null;
-    if (totalAfterPromoUsd == null) return "—";
-    return formatIdr(totalAfterPromoUsd);
-  })();
+    if (baseTotalIdr == null) return null;
+    // Best-effort: show subscription subtotal excluding add-ons.
+    return Math.max(0, baseTotalIdr - addOnsTotalIdr);
+  }, [addOnsTotalIdr, baseTotalIdr, showEstPrice]);
+
+  const displayTotalIdr = totalAfterPromoIdr ?? baseTotalIdr;
 
   return (
     <Card className="shadow-soft">
@@ -109,20 +162,20 @@ export function OrderSummaryCard({ showEstPrice = true }: { showEstPrice?: boole
               {addOnsTotal > 0 ? (
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground">Add-ons</span>
-                  <span className="text-sm font-medium text-foreground">{formatIdr(addOnsTotal)}</span>
+                  <span className="text-sm font-medium text-foreground">{formatIdr(addOnsTotalIdr)}</span>
                 </div>
               ) : null}
 
               <div className="rounded-xl bg-muted/30 p-3">
                 <h1 className="text-base font-bold text-foreground">Total Harga</h1>
-                <p className="mt-1 text-2xl font-bold text-foreground">{baseTotalUsd == null ? "—" : formatIdr(baseTotalUsd)}</p>
+                <p className="mt-1 text-2xl font-bold text-foreground">{displayTotalIdr == null ? "—" : formatIdr(displayTotalIdr)}</p>
               </div>
 
               {state.appliedPromo ? (
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground">{t("order.promo")}</span>
                   <span className="text-sm font-medium text-foreground truncate max-w-[220px]">
-                    {state.appliedPromo.code} (-{formatIdr(promoDiscountUsd)})
+                    {state.appliedPromo.code} (-{formatIdr(promoDiscountIdr)})
                   </span>
                 </div>
               ) : null}
