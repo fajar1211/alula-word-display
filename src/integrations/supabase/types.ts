@@ -1401,6 +1401,7 @@ export type Database = {
           id: string
           is_active: boolean
           label: string
+          package_id: string | null
           price_idr: number
           sort_order: number
           updated_at: string
@@ -1411,6 +1412,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label: string
+          package_id?: string | null
           price_idr?: number
           sort_order?: number
           updated_at?: string
@@ -1421,11 +1423,20 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string
+          package_id?: string | null
           price_idr?: number
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscription_add_ons_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       super_admin_audit_logs: {
         Row: {
