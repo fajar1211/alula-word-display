@@ -1275,6 +1275,7 @@ export type Database = {
           features: Json | null
           id: string
           is_active: boolean | null
+          is_best_seller: boolean
           is_recommended: boolean
           name: string
           price: number | null
@@ -1287,6 +1288,7 @@ export type Database = {
           features?: Json | null
           id?: string
           is_active?: boolean | null
+          is_best_seller?: boolean
           is_recommended?: boolean
           name: string
           price?: number | null
@@ -1299,6 +1301,7 @@ export type Database = {
           features?: Json | null
           id?: string
           is_active?: boolean | null
+          is_best_seller?: boolean
           is_recommended?: boolean
           name?: string
           price?: number | null
