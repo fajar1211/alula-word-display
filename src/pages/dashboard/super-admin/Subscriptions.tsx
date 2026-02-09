@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,17 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-
-
 
 import { Plus, Save, Trash2 } from "lucide-react";
 import PackageOnboardingSettingsPanel from "@/components/super-admin/PackageOnboardingSettingsPanel";
@@ -80,6 +72,7 @@ function safeNumber(v: unknown): number {
 export default function SuperAdminSubscriptions() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [isEditingPlans, setIsEditingPlans] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
@@ -102,17 +95,37 @@ export default function SuperAdminSubscriptions() {
   const [isEditingAddOns, setIsEditingAddOns] = useState(false);
   const [addOns, setAddOns] = useState<SubscriptionAddOnRow[]>([]);
 
+  const syncPackageIdToUrl = (nextId: string) => {
+    const sp = new URLSearchParams(searchParams);
+    if (nextId) sp.set("packageId", nextId);
+    else sp.delete("packageId");
+    setSearchParams(sp, { replace: true });
+  };
+
+  const handlePackageChange = (nextId: string) => {
+    setPricingPackageId(nextId);
+    syncPackageIdToUrl(nextId);
+  };
+
   const fetchDomainPricing = async () => {
     setPricingLoading(true);
     try {
       const [{ data: pkgRows, error: pkgErr }, pricingRes] = await Promise.all([
-        (supabase as any).from("packages").select("id,name,type,created_at"),
+        (supabase as any).from("packages").select("id,name,type,created_at,is_active"),
         (supabase as any).functions.invoke("admin-order-domain-pricing", { body: { action: "get" } }),
       ]);
       if (pkgErr) throw pkgErr;
 
       const mapped = Array.isArray(pkgRows)
-        ? (pkgRows as any[]).map((p: any) => ({ id: String(p.id), name: String(p.name ?? ""), type: String(p.type ?? ""), created_at: p.created_at }))
+        ? (pkgRows as any[])
+            .map((p: any) => ({
+              id: String(p.id),
+              name: String(p.name ?? ""),
+              type: String(p.type ?? ""),
+              created_at: p.created_at,
+              is_active: p.is_active !== false,
+            }))
+            .filter((p) => p.is_active)
         : [];
 
       const rank = (pkgType: string) => {
@@ -139,15 +152,20 @@ export default function SuperAdminSubscriptions() {
       const defaultPackageId = String(payload?.default_package_id ?? "");
       const priceRows = Array.isArray(payload?.tld_prices) ? (payload.tld_prices as any[]) : [];
 
+      const urlPackageId = String(searchParams.get("packageId") ?? "");
+      const isUrlValid = urlPackageId && pkgOptions.some((p) => p.id === urlPackageId);
       const isDefaultPkgValid = defaultPackageId && pkgOptions.some((p) => p.id === defaultPackageId);
 
-      if (isDefaultPkgValid) {
-        setPricingPackageId(defaultPackageId);
-      } else if (pkgOptions.length) {
-        setPricingPackageId(pkgOptions[0].id);
-      } else {
-        setPricingPackageId("");
-      }
+      const nextSelectedId = isUrlValid
+        ? urlPackageId
+        : isDefaultPkgValid
+          ? defaultPackageId
+          : pkgOptions.length
+            ? pkgOptions[0].id
+            : "";
+
+      setPricingPackageId(nextSelectedId);
+      if (nextSelectedId && nextSelectedId !== urlPackageId) syncPackageIdToUrl(nextSelectedId);
 
       const normalized = priceRows
         .map((r) => ({ tld: normalizeTld(r?.tld), price_usd: safeNumber(r?.price_usd) }))
@@ -417,26 +435,26 @@ export default function SuperAdminSubscriptions() {
             Website Plans & Add-ons tetap global.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-2 md:max-w-md">
+        <CardContent className="space-y-2">
           <Label className="text-xs">Select Package</Label>
-          <Select value={pricingPackageId || ""} onValueChange={setPricingPackageId} disabled={pricingLoading || pricingSaving}>
-            <SelectTrigger>
-              <SelectValue placeholder={pricingLoading ? "Loading..." : "Select package"} />
-            </SelectTrigger>
-            <SelectContent>
-              {packages.length ? (
-                packages.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="__none" disabled>
-                  No packages
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+
+          {pricingLoading ? (
+            <div className="text-sm text-muted-foreground">Loading packages...</div>
+          ) : packages.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No active packages.</div>
+          ) : (
+            <Tabs value={pricingPackageId || packages[0].id} onValueChange={handlePackageChange}>
+              <div className="w-full overflow-x-auto">
+                <TabsList className="inline-flex w-max justify-start">
+                  {packages.map((p) => (
+                    <TabsTrigger key={p.id} value={p.id} disabled={pricingSaving}>
+                      {p.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
 
