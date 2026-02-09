@@ -159,7 +159,7 @@ export default function Checkout() {
   }, [libraryCityNames.length, resolvedProvinceCode, selectedProvinceName]);
 
   return (
-    <OrderLayout title="Checkout" step="details" sidebar={<OrderSummaryCard showEstPrice={false} />}>
+    <OrderLayout title="Checkout" step="details" flow="plan" sidebar={<OrderSummaryCard showEstPrice={false} />}>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Data Pemesan</CardTitle>

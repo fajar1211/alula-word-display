@@ -1,10 +1,13 @@
 import { ReactNode, useMemo } from "react";
+
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import { cn } from "@/lib/utils";
 
 type StepKey = "domain" | "design" | "details" | "plan" | "payment";
+
+type FlowKey = "legacy" | "plan";
 
 type Step = {
   key: StepKey;
@@ -16,30 +19,41 @@ function stepIndex(steps: Step[], activeKey: Step["key"]) {
   return idx === -1 ? 0 : idx;
 }
 
+function flowSteps(t: (key: string) => string, flow: FlowKey): Step[] {
+  if (flow === "plan") {
+    return [
+      { key: "domain", label: "Pilih Plan" },
+      { key: "details", label: "Data Anda" },
+      { key: "plan", label: "Paket Berlangganan" },
+      { key: "payment", label: "Pembayaran" },
+    ];
+  }
+
+  return [
+    { key: "domain", label: t("order.step.domain") },
+    { key: "design", label: t("order.step.design") },
+    { key: "details", label: t("order.step.details") },
+    { key: "plan", label: t("order.step.plan") },
+    { key: "payment", label: t("order.step.payment") },
+  ];
+}
+
 export function OrderLayout({
   title,
   step,
+  flow = "legacy",
   children,
   sidebar,
 }: {
   title: string;
   step: StepKey;
+  flow?: FlowKey;
   children: ReactNode;
   sidebar: ReactNode | null;
 }) {
   const { t } = useI18n();
 
-  const steps = useMemo<Step[]>(
-    () => [
-      { key: "domain", label: t("order.step.domain") },
-      { key: "design", label: t("order.step.design") },
-      { key: "details", label: t("order.step.details") },
-      { key: "plan", label: t("order.step.plan") },
-      { key: "payment", label: t("order.step.payment") },
-    ],
-    [t],
-  );
-
+  const steps = useMemo<Step[]>(() => flowSteps(t, flow), [t, flow]);
   const active = stepIndex(steps, step);
 
   return (
@@ -50,7 +64,12 @@ export function OrderLayout({
           <div className="mt-4">
             <Card className="border-0 bg-muted/40">
               <CardContent className="py-4">
-                <ol className="grid grid-cols-2 gap-y-3 gap-x-4 md:grid-cols-5">
+                <ol
+                  className={cn(
+                    "grid grid-cols-2 gap-y-3 gap-x-4",
+                    steps.length === 4 ? "md:grid-cols-4" : "md:grid-cols-5",
+                  )}
+                >
                   {steps.map((s, idx) => (
                     <li key={s.key} className="flex items-center gap-2">
                       <div
@@ -82,4 +101,3 @@ export function OrderLayout({
     </PublicLayout>
   );
 }
-

@@ -47,7 +47,7 @@ export default function Subscribe() {
   const selected = state.subscriptionYears;
 
   return (
-    <OrderLayout title="Subscribe" step="plan" sidebar={<OrderSummaryCard />}>
+    <OrderLayout title="Subscribe" step="plan" flow="plan" sidebar={<OrderSummaryCard />}>
       <div className="space-y-6">
         <Card>
           <CardHeader className="pb-3">

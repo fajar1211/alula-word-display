@@ -89,7 +89,7 @@ export default function SelectPlan() {
   const selectedId = state.selectedPackageId;
 
   return (
-    <OrderLayout title="Pilih Plan" step="domain" sidebar={null}>
+    <OrderLayout title="Pilih Plan" step="domain" flow="plan" sidebar={null}>
       <div className="space-y-6">
         <Card>
           <CardHeader className="pb-3">

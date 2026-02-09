@@ -11,7 +11,7 @@ export default function Billing() {
   const { state } = useOrder();
 
   return (
-    <OrderLayout title="Billing" step="payment" sidebar={<OrderSummaryCard />}>
+    <OrderLayout title="Billing" step="payment" flow="plan" sidebar={<OrderSummaryCard />}>
       <div className="space-y-6">
         <Card>
           <CardHeader>
