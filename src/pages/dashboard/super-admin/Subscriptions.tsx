@@ -114,6 +114,24 @@ export default function SuperAdminSubscriptions() {
   const [plansSaving, setPlansSaving] = useState(false);
   const [plans, setPlans] = useState<PlanRow[]>([]);
 
+  const baseYearMeta = useMemo(() => {
+    const values = plans.map((p) => asNumber(p.base_price_idr, 0));
+    const first = values[0] ?? 0;
+    const mixed = values.some((v) => v !== first);
+    return { value: first, mixed };
+  }, [plans]);
+
+  const setBaseYearForAll = (nextBase: number) => {
+    const base = Math.max(0, asNumber(nextBase, 0));
+    setPlans((prev) =>
+      prev.map((x) => {
+        const next = { ...x, base_price_idr: base };
+        if (!next.manual_override) next.price_usd = computePlanAutoPrice(next);
+        return next;
+      }),
+    );
+  };
+
   const [addOnsLoading, setAddOnsLoading] = useState(true);
   const [addOnsSaving, setAddOnsSaving] = useState(false);
   const [isEditingAddOns, setIsEditingAddOns] = useState(false);
@@ -673,6 +691,29 @@ export default function SuperAdminSubscriptions() {
             </Button>
           </div>
 
+          <div className="grid gap-2 rounded-md border bg-muted/20 p-3 sm:grid-cols-12">
+            <div className="sm:col-span-4">
+              <Label className="text-xs">Harga dasar / tahun</Label>
+              <Input
+                className="w-full"
+                value={String(baseYearMeta.value ?? 0)}
+                onChange={(e) => setBaseYearForAll(asNumber(e.target.value, 0))}
+                inputMode="decimal"
+                disabled={plansSaving || !isEditingPlans}
+              />
+            </div>
+            <div className="sm:col-span-8">
+              <div className="text-[11px] text-muted-foreground">
+                Input sekali, otomatis menghitung harga untuk 1/2/3 tahun sesuai diskon masing-masing plan.
+              </div>
+              {baseYearMeta.mixed ? (
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  Catatan: sebelumnya ada beberapa nilai “harga dasar” berbeda—nilai ini akan disamakan saat kamu edit.
+                </div>
+              ) : null}
+            </div>
+          </div>
+
           {plansLoading ? <div className="text-sm text-muted-foreground">Loading...</div> : null}
 
           {!plansLoading && plans.length ? (
@@ -721,27 +762,8 @@ export default function SuperAdminSubscriptions() {
 
                   <div className="min-w-0 md:col-span-4">
                     <Label className="text-xs">Pricing</Label>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <div className="min-w-0">
-                        <Label className="text-[11px] text-muted-foreground">Harga dasar / tahun</Label>
-                        <Input
-                          className="w-full"
-                          value={String(p.base_price_idr ?? 0)}
-                          onChange={(e) =>
-                            setPlans((prev) =>
-                              prev.map((x, i) => {
-                                if (i !== idx) return x;
-                                const next = { ...x, base_price_idr: asNumber(e.target.value, 0) };
-                                if (!next.manual_override) next.price_usd = computePlanAutoPrice(next);
-                                return next;
-                              }),
-                            )
-                          }
-                          inputMode="decimal"
-                          disabled={plansSaving || !isEditingPlans || isManual}
-                        />
-                      </div>
 
+                    <div className="grid gap-2 sm:grid-cols-2">
                       <div className="min-w-0">
                         <Label className="text-[11px] text-muted-foreground">Diskon %</Label>
                         <Input
@@ -764,7 +786,7 @@ export default function SuperAdminSubscriptions() {
 
                       <div className="min-w-0">
                         <Label className="text-[11px] text-muted-foreground">
-                          Harga / tahun{isManual ? " (manual)" : " (auto)"}
+                          Harga / {p.years} tahun{isManual ? " (manual)" : " (auto)"}
                         </Label>
                         <Input
                           className="w-full"
@@ -786,6 +808,10 @@ export default function SuperAdminSubscriptions() {
                           disabled={plansSaving || !isEditingPlans || !isManual}
                         />
                       </div>
+                    </div>
+
+                    <div className="mt-1 text-[11px] text-muted-foreground">
+                      Dasar: {baseYearMeta.value ?? 0} × {p.years} tahun
                     </div>
 
                     <div className="mt-2 flex items-center justify-between rounded-md border bg-background/50 px-3 py-2">
@@ -868,7 +894,7 @@ export default function SuperAdminSubscriptions() {
                   {
                     years: 1,
                     label: "1 Year",
-                    base_price_idr: 0,
+                    base_price_idr: baseYearMeta.value ?? 0,
                     discount_percent: 0,
                     manual_override: true,
                     override_price_idr: 0,
