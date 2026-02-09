@@ -103,7 +103,7 @@ export default function Packages() {
 
   useEffect(() => {
     (async () => {
-      const PACKAGES_START_URLS_KEY = "packages_start_urls";
+      const PACKAGES_START_URLS_FN = "packages-start-urls";
 
       const [faqRes, pkgRes, addOnsRes, layoutRes, startUrlsRes] = await Promise.all([
         supabase
@@ -126,14 +126,13 @@ export default function Packages() {
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: true }),
         (supabase as any).from("website_settings").select("value").eq("key", LAYOUT_SETTINGS_KEY).maybeSingle(),
-        (supabase as any).from("website_settings").select("value").eq("key", PACKAGES_START_URLS_KEY).maybeSingle(),
+        supabase.functions.invoke<{ ok: boolean; value?: Record<string, string> }>(PACKAGES_START_URLS_FN, { body: {} }),
       ]);
 
       if (!faqRes.error) setFaqs((faqRes.data ?? []) as FaqRow[]);
 
-      const startUrls = (startUrlsRes as any)?.data?.value;
-      const map: Record<string, string> = startUrls && typeof startUrls === "object" ? (startUrls as any) : {};
-      setStartUrlsMap(map);
+      const map = (startUrlsRes as any)?.data?.value;
+      setStartUrlsMap(map && typeof map === "object" ? (map as any) : {});
 
       const addOnsByPackageId = new Map<string, PackageAddOnRow[]>();
       if (addOnsRes?.data) {

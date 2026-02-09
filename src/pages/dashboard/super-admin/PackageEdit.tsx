@@ -93,21 +93,21 @@ export default function SuperAdminPackageEdit() {
         });
 
         // Load durations for this package
-        const PACKAGES_START_URLS_KEY = "packages_start_urls";
-        const [{ data: durationRows, error: durationErr }, { data: startUrlsRow, error: startUrlsErr }] = await Promise.all([
+        const PACKAGES_START_URLS_FN = "packages-start-urls";
+        const [{ data: durationRows, error: durationErr }, startUrlsRes] = await Promise.all([
           (supabase as any)
             .from("package_durations")
             .select("id,package_id,duration_months,discount_percent,is_active,sort_order")
             .eq("package_id", String(data.id))
             .order("sort_order", { ascending: true })
             .order("duration_months", { ascending: true }),
-          (supabase as any).from("website_settings").select("value").eq("key", PACKAGES_START_URLS_KEY).maybeSingle(),
+          invokeWithAuth<{ ok: boolean; value?: Record<string, string> }>(PACKAGES_START_URLS_FN, {}),
         ]);
 
         if (durationErr) throw durationErr;
-        if (startUrlsErr) throw startUrlsErr;
+        if ((startUrlsRes as any)?.error) throw (startUrlsRes as any).error;
 
-        const startMap = (startUrlsRow as any)?.value;
+        const startMap = (startUrlsRes as any)?.data?.value;
         setStartUrl(typeof startMap === "object" && startMap ? String((startMap as any)[String(data.id)] ?? "") : "");
 
         setDurations(

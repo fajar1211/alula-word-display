@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithAuth } from "@/lib/invokeWithAuth";
 import { toast } from "sonner";
 import { Edit, Plus, RefreshCcw, Trash2 } from "lucide-react";
 
@@ -197,24 +198,23 @@ export default function SuperAdminPackages() {
       const { data, error } = await (supabase as any).from("packages").insert(payload).select("id").single();
       if (error) throw error;
 
-      // Save start URL mapping (website_settings)
-      const startUrl = String(draft.start_url ?? "").trim();
-      if (startUrl && data?.id) {
-        const PACKAGES_START_URLS_KEY = "packages_start_urls";
-        const [{ data: row, error: rowErr }] = await Promise.all([
-          (supabase as any).from("website_settings").select("value").eq("key", PACKAGES_START_URLS_KEY).maybeSingle(),
-        ]);
-        if (rowErr) throw rowErr;
-
-        const current = (row as any)?.value;
-        const map: Record<string, string> = current && typeof current === "object" ? { ...(current as any) } : {};
-        const normalized = startUrl.startsWith("/") || /^https?:\/\//i.test(startUrl) ? startUrl : `/${startUrl}`;
-        map[String(data.id)] = normalized;
-
-        const { error: upsertErr } = await (supabase as any)
-          .from("website_settings")
-          .upsert({ key: PACKAGES_START_URLS_KEY, value: map }, { onConflict: "key" });
-        if (upsertErr) throw upsertErr;
+      // Save start_url via edge function (avoids RLS issues on website_settings)
+      if (data?.id) {
+        await invokeWithAuth("super-admin-save-marketing-package", {
+          package: {
+            id: String(data.id),
+            name: payload.name,
+            description: payload.description,
+            price: payload.price,
+            features: payload.features,
+            is_active: payload.is_active,
+          },
+          start_url: String(draft.start_url ?? "").trim() ? String(draft.start_url).trim() : null,
+          add_ons: [],
+          removed_add_on_ids: [],
+          durations: [],
+          removed_duration_ids: [],
+        });
       }
 
       toast.success("Package created");
