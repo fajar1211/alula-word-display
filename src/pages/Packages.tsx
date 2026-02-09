@@ -222,7 +222,16 @@ export default function Packages() {
                 {packages.map((pkg, i) => {
                   const features = Array.isArray(pkg.features) ? pkg.features : [];
                   const startUrl = (startUrlsMap as any)?.[String(pkg.id)] as string | undefined;
-                  const to = startUrl && String(startUrl).trim() ? String(startUrl).trim() : "/auth";
+
+                  const n = (pkg.name ?? "").trim().toLowerCase();
+                  const type = (pkg.type ?? "").trim().toLowerCase();
+                  const isCheckoutPlan = n === "growth" || n === "pro" || type === "growth" || type === "pro";
+
+                  const to = isCheckoutPlan
+                    ? `/order/select-plan?packageId=${encodeURIComponent(String(pkg.id))}`
+                    : startUrl && String(startUrl).trim()
+                      ? String(startUrl).trim()
+                      : "/auth";
 
                   return (
                     <Card
@@ -318,7 +327,7 @@ export default function Packages() {
             <p className="mt-4 text-lg text-primary-foreground/80">{t("packages.ctaSub")}</p>
             <div className="mt-10">
               <Button size="lg" variant="secondary" asChild>
-                <Link to="/auth">
+                <Link to="/order/select-plan">
                   {t("packages.ctaButton")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

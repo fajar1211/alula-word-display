@@ -49,6 +49,12 @@ import Details from "./pages/order/Details";
 import SubscriptionPlan from "./pages/order/SubscriptionPlan";
 import Payment from "./pages/order/Payment";
 
+// Packages checkout flow (Growth/Pro)
+import SelectPlan from "./pages/order/SelectPlan";
+import Checkout from "./pages/order/Checkout";
+import Subscribe from "./pages/order/Subscribe";
+import Billing from "./pages/order/Billing";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -198,6 +204,12 @@ const App = () => (
                 <Route path="/order/details" element={<Details />} />
                 <Route path="/order/subscription" element={<SubscriptionPlan />} />
                 <Route path="/order/payment" element={<Payment />} />
+
+                {/* Packages checkout flow (Growth/Pro) */}
+                <Route path="/order/select-plan" element={<SelectPlan />} />
+                <Route path="/order/checkout" element={<Checkout />} />
+                <Route path="/order/subscribe" element={<Subscribe />} />
+                <Route path="/order/billing" element={<Billing />} />
 
                 {/* Explicit 404 route (dipakai untuk redirect akses tanpa login) */}
                 <Route path="/404" element={<NotFound />} />
