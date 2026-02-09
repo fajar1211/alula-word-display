@@ -122,10 +122,10 @@ export default function SelectPlan() {
                       onClick={() => setPackage({ id: pkg.id, name: pkg.name })}
                       className={cn(
                         // Make cards equal-height in grid + keep content top-aligned
-                        "group relative flex h-full w-full flex-col items-stretch justify-start overflow-hidden rounded-2xl border bg-card p-5 text-left shadow-soft transition will-change-transform",
-                        "hover:-translate-y-0.5 hover:shadow-lg",
+                        "group relative flex h-full w-full flex-col items-stretch justify-start overflow-hidden rounded-2xl border bg-card p-5 text-left shadow-soft transition-[transform,box-shadow,border-color,background-color] will-change-transform",
+                        !isSelected && "hover:-translate-y-0.5 hover:shadow-lg",
+                        isSelected && "border-primary/50 bg-primary/5 -translate-y-0.5 shadow-lg ring-2 ring-primary",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        isSelected && "ring-2 ring-primary shadow-lg",
                         "animate-fade-in",
                       )}
                       style={{ animationDelay: `${i * 0.06}s` }}
@@ -138,6 +138,14 @@ export default function SelectPlan() {
                           isSelected ? "bg-primary" : "bg-muted",
                         )}
                       />
+
+                      {/* selected background accent */}
+                      {isSelected ? (
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_0%,hsl(var(--primary)/0.18)_0%,transparent_60%)]"
+                        />
+                      ) : null}
 
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
