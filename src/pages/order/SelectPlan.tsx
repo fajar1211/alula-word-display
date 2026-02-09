@@ -118,12 +118,14 @@ export default function SelectPlan() {
                     <button
                       key={pkg.id}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => setPackage({ id: pkg.id, name: pkg.name })}
                       className={cn(
-                        "group relative w-full overflow-hidden rounded-2xl border bg-card p-5 text-left shadow-soft transition will-change-transform",
+                        // Make cards equal-height in grid + keep content top-aligned
+                        "group relative flex h-full w-full flex-col items-stretch justify-start overflow-hidden rounded-2xl border bg-card p-5 text-left shadow-soft transition will-change-transform",
                         "hover:-translate-y-0.5 hover:shadow-lg",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        isSelected ? "ring-2 ring-primary" : "",
+                        isSelected && "ring-2 ring-primary shadow-lg",
                         "animate-fade-in",
                       )}
                       style={{ animationDelay: `${i * 0.06}s` }}
@@ -144,7 +146,14 @@ export default function SelectPlan() {
                           </Badge>
                           <p className="mt-2 text-lg font-semibold text-foreground truncate">{pkg.name}</p>
                         </div>
-                        {isSelected ? <Badge variant="secondary">Dipilih</Badge> : <Badge variant="outline">Pilih</Badge>}
+                        {isSelected ? (
+                          <Badge variant="success" className="gap-1">
+                            <Check className="h-3.5 w-3.5" />
+                            Dipilih
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Pilih</Badge>
+                        )}
                       </div>
 
                       <div className="mt-4">
