@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Star } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useOrder } from "@/contexts/OrderContext";
 
 import { OrderLayout } from "@/components/order/OrderLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,10 @@ function isGrowthOrPro(pkg: Pick<PackageRow, "name" | "type">) {
   const isGrowth = name.includes("growth") || type.includes("growth");
   const isPro = name.includes("pro") || type.includes("pro");
   return isGrowth || isPro;
+}
+
+function formatIdr(value: number) {
+  return `Rp ${Math.round(value).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
 }
 
 export default function SelectPlan() {
@@ -97,38 +102,58 @@ export default function SelectPlan() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Growth atau Pro</CardTitle>
-            <p className="text-sm text-muted-foreground">Pilih plan yang sesuai kebutuhan kamu.</p>
+            <CardDescription>Pilih plan yang sesuai kebutuhan kamu.</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
               <p className="text-sm text-muted-foreground">Memuat plan…</p>
             ) : rows.length ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {rows.map((pkg) => {
+              <div className="grid gap-4 md:grid-cols-2">
+                {rows.map((pkg, i) => {
                   const isSelected = selectedId === pkg.id;
+                  const price = Number(pkg.price ?? 0);
+
                   return (
                     <button
                       key={pkg.id}
                       type="button"
                       onClick={() => setPackage({ id: pkg.id, name: pkg.name })}
                       className={cn(
-                        "w-full rounded-xl border bg-card p-4 text-left shadow-soft transition",
-                        isSelected ? "ring-2 ring-ring bg-accent/30" : "hover:bg-muted/30",
+                        "relative w-full overflow-hidden rounded-2xl border bg-card p-5 text-left shadow-soft transition will-change-transform",
+                        "hover:-translate-y-0.5 hover:shadow-lg",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        isSelected ? "ring-2 ring-primary" : "",
+                        "animate-fade-in",
                       )}
+                      style={{ animationDelay: `${i * 0.06}s` }}
                     >
+                      {!!pkg.is_recommended && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <Badge variant="default" className="gap-1">
+                            <Star className="h-3.5 w-3.5" />
+                            Rekomendasi
+                          </Badge>
+                        </div>
+                      )}
+
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-base font-semibold text-foreground truncate">{pkg.name}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">{pkg.description || pkg.type}</p>
+                          <Badge variant="outline" className="w-fit uppercase">
+                            {pkg.type}
+                          </Badge>
+                          <p className="mt-2 text-lg font-semibold text-foreground truncate">{pkg.name}</p>
                         </div>
-                        {pkg.is_recommended ? <Badge variant="secondary">Rekomendasi</Badge> : <Badge variant="outline">Plan</Badge>}
+                        {isSelected ? <Badge variant="secondary">Dipilih</Badge> : <Badge variant="outline">Pilih</Badge>}
                       </div>
+
                       <div className="mt-4">
-                        <p className="text-2xl font-bold text-foreground">
-                          Rp {Number(pkg.price ?? 0).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
-                        </p>
+                        <p className="text-3xl font-bold text-foreground">{formatIdr(price)}</p>
                         <p className="mt-1 text-xs text-muted-foreground">Harga dasar (belum termasuk durasi).</p>
                       </div>
+
+                      {pkg.description ? (
+                        <p className="mt-4 text-sm text-muted-foreground line-clamp-3">{pkg.description}</p>
+                      ) : null}
                     </button>
                   );
                 })}
