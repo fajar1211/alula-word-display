@@ -160,7 +160,7 @@ export default function SelectPlan() {
                         <div className="mt-5">
                           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Features</p>
                           <ul className="mt-3 space-y-2">
-                            {features.slice(0, 6).map((f, idx) => (
+                            {features.map((f, idx) => (
                               <li key={idx} className="flex items-start gap-3 text-sm">
                                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted">
                                   <Check className="h-3.5 w-3.5 text-accent" />
@@ -169,9 +169,6 @@ export default function SelectPlan() {
                               </li>
                             ))}
                           </ul>
-                          {features.length > 6 ? (
-                            <p className="mt-3 text-xs text-muted-foreground">+{features.length - 6} fitur lainnya</p>
-                          ) : null}
                         </div>
                       ) : null}
                     </button>
