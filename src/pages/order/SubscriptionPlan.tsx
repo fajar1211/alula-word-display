@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { OrderLayout } from "@/components/order/OrderLayout";
@@ -19,8 +19,21 @@ function formatIdr(value: number) {
 export default function SubscriptionPlan() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { state, setSubscriptionYears } = useOrder();
-  const { subscriptionPlans } = useOrderPublicSettings(state.domain, state.selectedPackageId);
+  const { state, setSubscriptionYears, setPackage } = useOrder();
+
+  // IMPORTANT: /order/subscription adalah flow paket Website Only /Tahun.
+  // Jangan biarkan selectedPackageId/name yang tersimpan dari flow lain (mis. paket bulanan) mempengaruhi summary.
+  const { subscriptionPlans, pricing } = useOrderPublicSettings(state.domain, null);
+
+  useEffect(() => {
+    if (!pricing.defaultPackageId) return;
+    if (state.selectedPackageId === pricing.defaultPackageId) return;
+
+    setPackage({
+      id: pricing.defaultPackageId,
+      name: pricing.packageName || "Website Only /Tahun",
+    });
+  }, [pricing.defaultPackageId, pricing.packageName, setPackage, state.selectedPackageId]);
 
   const options = useMemo(
     () =>
@@ -47,6 +60,7 @@ export default function SubscriptionPlan() {
   );
 
   const selected = state.subscriptionYears;
+  const selectedPackageLabel = state.selectedPackageName || pricing.packageName;
 
   return (
     <OrderLayout title={t("order.step.plan")} step="plan" sidebar={<OrderSummaryCard />}>
@@ -58,9 +72,9 @@ export default function SubscriptionPlan() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <CardTitle className="text-base">{t("order.chooseDuration")}</CardTitle>
-                {state.selectedPackageName ? (
+                {selectedPackageLabel ? (
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Paket terpilih: <span className="text-foreground font-medium">{state.selectedPackageName}</span>
+                    Paket terpilih: <span className="text-foreground font-medium">{selectedPackageLabel}</span>
                   </p>
                 ) : null}
               </div>
@@ -83,9 +97,7 @@ export default function SubscriptionPlan() {
                       onClick={() => setSubscriptionYears(opt.years)}
                       className={cn(
                         "w-full rounded-xl border bg-card p-4 text-left shadow-soft transition will-change-transform",
-                        isSelected
-                          ? "border-primary/50 bg-primary/5 shadow-lg ring-2 ring-primary scale-[1.01]"
-                          : "hover:bg-muted/30 hover:shadow",
+                        isSelected ? "border-primary/50 bg-primary/5 shadow-lg ring-2 ring-primary scale-[1.01]" : "hover:bg-muted/30 hover:shadow",
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -93,17 +105,11 @@ export default function SubscriptionPlan() {
                           <p className="text-base font-semibold text-foreground">{finalLabel}</p>
                           <p className="mt-1 text-sm text-muted-foreground">{t("order.allIn")}</p>
                         </div>
-                        {isSelected ? (
-                          <Badge variant="secondary">{t("order.selected")}</Badge>
-                        ) : (
-                          <Badge variant="outline">Plan</Badge>
-                        )}
+                        {isSelected ? <Badge variant="secondary">{t("order.selected")}</Badge> : <Badge variant="outline">Plan</Badge>}
                       </div>
 
                       <div className="mt-4">
-                        <p className="text-2xl font-bold text-foreground">
-                          {opt.priceIdr > 0 ? formatIdr(opt.priceIdr) : "—"}
-                        </p>
+                        <p className="text-2xl font-bold text-foreground">{opt.priceIdr > 0 ? formatIdr(opt.priceIdr) : "—"}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{t("order.totalFor", { years: opt.years })}</p>
                       </div>
                     </button>
@@ -122,12 +128,7 @@ export default function SubscriptionPlan() {
           <Button type="button" variant="outline" onClick={() => navigate("/order/details")}>
             {t("common.back")}
           </Button>
-          <Button
-            type="button"
-            size="lg"
-            disabled={!selected}
-            onClick={() => navigate("/order/payment")}
-          >
+          <Button type="button" size="lg" disabled={!selected} onClick={() => navigate("/order/payment")}>
             {t("order.continuePayment")}
           </Button>
         </div>
@@ -135,3 +136,4 @@ export default function SubscriptionPlan() {
     </OrderLayout>
   );
 }
+
