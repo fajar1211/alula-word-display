@@ -26,7 +26,7 @@ export function OrderSummaryCard({
 }) {
   const { t, lang } = useI18n();
   const { state } = useOrder();
-  const { contact, subscriptionPlans } = useOrderPublicSettings(state.domain, state.selectedPackageId);
+  const { contact, subscriptionPlans, pricing } = useOrderPublicSettings(state.domain, state.selectedPackageId);
   const { total: packageAddOnsTotal } = useOrderAddOns({ packageId: state.selectedPackageId, quantities: state.addOns ?? {} });
   const { total: subscriptionAddOnsTotal } = useSubscriptionAddOns({ selected: state.subscriptionAddOns ?? {}, packageId: state.selectedPackageId });
   const addOnsTotal = packageAddOnsTotal + subscriptionAddOnsTotal;
@@ -103,6 +103,18 @@ export function OrderSummaryCard({
 
   const effectiveEstTotalLabel = estTotalLabel ?? "—";
 
+  const isMonthly = (() => {
+    const n = String(state.selectedPackageName ?? "").toLowerCase().trim();
+    return n.includes("full digital marketing") || n.includes("blog + social media");
+  })();
+
+  const perMonthLabel = lang === "id" ? "Harga /Bulan" : "Price /Month";
+  const totalLabel = lang === "id" ? "Total Harga" : "Total";
+  const perMonthValue = (() => {
+    const v = Number(pricing?.packagePriceUsd ?? 0);
+    return Number.isFinite(v) && v > 0 ? formatIdr(v) : "—";
+  })();
+
   if (variant === "compact") {
     const packageName = planValueOverride ?? state.selectedPackageName ?? "—";
     const durationValue = yearsLabel;
@@ -114,10 +126,23 @@ export function OrderSummaryCard({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-muted-foreground">{t("order.amount")}</span>
-              <span className="text-sm font-semibold text-foreground">{effectiveEstTotalLabel}</span>
-            </div>
+            {isMonthly ? (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">{perMonthLabel}</span>
+                  <span className="text-sm font-semibold text-foreground">{perMonthValue}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">{totalLabel}</span>
+                  <span className="text-sm font-semibold text-foreground">{effectiveEstTotalLabel}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-muted-foreground">{totalLabel}</span>
+                <span className="text-sm font-semibold text-foreground">{effectiveEstTotalLabel}</span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-muted-foreground">Durasi</span>
