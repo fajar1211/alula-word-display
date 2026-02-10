@@ -351,11 +351,26 @@ export default function SuperAdminSubscriptions() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricingPackageId]);
 
-  const isMonthlyBaseForPlans = () => {
-    const name = String(packages.find((p) => p.id === pricingPackageId)?.name ?? "")
+  const normalizePackageName = (name: string) =>
+    String(name ?? "")
       .toLowerCase()
+      .replace(/\s+/g, " ")
       .trim();
-    return name === "full digital marketing" || name === "blog + social media";
+
+  const isMonthlyBasePackageName = (name: string) => {
+    const n = normalizePackageName(name);
+
+    // KHUSUS: hanya 2 menu ini yang berbasis /Bulan.
+    // Nama di DB bisa mengandung suffix seperti "/Bulan" atau variasi spasi.
+    const isFdm = n.includes("full digital marketing");
+    const isBlogSocmed = n.includes("blog + social media") || n.includes("blog+social media");
+
+    return isFdm || isBlogSocmed;
+  };
+
+  const isMonthlyBaseForPlans = () => {
+    const name = packages.find((p) => p.id === pricingPackageId)?.name ?? "";
+    return isMonthlyBasePackageName(name);
   };
 
   const savePlans = async () => {
@@ -478,8 +493,7 @@ export default function SuperAdminSubscriptions() {
   }, [packages, pricingPackageId]);
 
   const isMarketingPackage = useMemo(() => {
-    const n = selectedPackageName.toLowerCase().trim();
-    return n === "full digital marketing" || n === "blog + social media";
+    return isMonthlyBasePackageName(selectedPackageName);
   }, [selectedPackageName]);
 
   const planAutoOpts = useMemo(() => ({ isMonthlyBase: isMarketingPackage }), [isMarketingPackage]);
