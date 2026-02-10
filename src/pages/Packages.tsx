@@ -253,11 +253,12 @@ export default function Packages() {
         try {
           const pkgIds = withAddOns.map((p) => String(p.id));
           const pkgYearsWanted: Record<string, number> = {};
-          for (const p of withAddOns) {
-            const n = String(p.name ?? "").trim().toLowerCase();
-            const t = String(p.type ?? "").trim().toLowerCase();
-            pkgYearsWanted[String(p.id)] = n === "growth" || t === "growth" ? 3 : 1;
-          }
+            for (const p of withAddOns) {
+              const n = String(p.name ?? "").trim().toLowerCase();
+              const t = String(p.type ?? "").trim().toLowerCase();
+              const isMarketing3y = n === "growth" || t === "growth" || n === "pro" || t === "pro";
+              pkgYearsWanted[String(p.id)] = isMarketing3y ? 3 : 1;
+            }
 
           const keys = pkgIds.map((id) => `order_subscription_plans:${id}`);
 
@@ -324,7 +325,8 @@ export default function Packages() {
             for (const p of withAddOns) {
               const n = String(p.name ?? "").trim().toLowerCase();
               const t = String(p.type ?? "").trim().toLowerCase();
-              yearsWantedById[String(p.id)] = n === "growth" || t === "growth" ? 3 : 1;
+              const isMarketing3y = n === "growth" || t === "growth" || n === "pro" || t === "pro";
+              yearsWantedById[String(p.id)] = isMarketing3y ? 3 : 1;
             }
 
             const map: Record<string, number> = {};
@@ -399,6 +401,7 @@ export default function Packages() {
                   const type = (pkg.type ?? "").trim().toLowerCase();
                   const isCheckoutPlan = n === "growth" || n === "pro" || type === "growth" || type === "pro";
                   const isGrowth = n === "growth" || type === "growth";
+                  const isPro = n === "pro" || type === "pro";
 
                   const to = isCheckoutPlan
                     ? `/order/select-plan?packageId=${encodeURIComponent(String(pkg.id))}`
@@ -433,7 +436,7 @@ export default function Packages() {
                               planMetaFromSettings ??
                               (isMonthlyBase
                                 ? {
-                                    years: isGrowth ? 3 : 1,
+                                    years: isGrowth || isPro ? 3 : 1,
                                     basePriceIdr: Number(pkg.price ?? 0),
                                     discountPercent: Number(durationDiscountByPackageId[String(pkg.id)] ?? 0),
                                     manualOverride: false,
