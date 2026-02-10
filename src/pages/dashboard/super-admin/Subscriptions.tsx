@@ -537,261 +537,260 @@ export default function SuperAdminSubscriptions() {
       </Card>
 
       {/* Duration Plan - middle */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle>Duration Plan</CardTitle>
-              <CardDescription>Manage “Choose plan duration” options on /order/subscription.</CardDescription>
-            </div>
-            <Badge variant="outline">Total: {plansCountLabel}</Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs text-muted-foreground">{isEditingPlans ? "Edit mode: ON" : "Edit mode: OFF"}</div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditingPlans((v) => !v)}
-              disabled={plansSaving}
-            >
-              {isEditingPlans ? "Cancel" : "Edit"}
-            </Button>
-          </div>
-
-          <div className="grid gap-2 rounded-md border bg-muted/20 p-3 sm:grid-cols-12">
-            <div className="sm:col-span-4">
-              <Label className="text-xs">{isMarketingPackage ? "Harga dasar / Bulan" : "Harga dasar / tahun"}</Label>
-              <Input
-                className="w-full"
-                value={String(baseYearMeta.value ?? 0)}
-                onChange={(e) => setBaseYearForAll(asNumber(e.target.value, 0), planAutoOpts)}
-                inputMode="decimal"
-                disabled={plansSaving || !isEditingPlans}
-              />
-            </div>
-            <div className="sm:col-span-8">
-              <div className="text-[11px] text-muted-foreground">
-                Input sekali, otomatis menghitung harga untuk 1/2/3 tahun sesuai diskon masing-masing plan.
+      {!isMarketingPackage ? (
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle>Duration Plan</CardTitle>
+                <CardDescription>Manage “Choose plan duration” options on /order/subscription.</CardDescription>
               </div>
-              {baseYearMeta.mixed ? (
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  Catatan: sebelumnya ada beberapa nilai “harga dasar” berbeda—nilai ini akan disamakan saat kamu edit.
-                </div>
-              ) : null}
+              <Badge variant="outline">Total: {plansCountLabel}</Badge>
             </div>
-          </div>
+          </CardHeader>
 
-          {plansLoading ? <div className="text-sm text-muted-foreground">Loading...</div> : null}
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs text-muted-foreground">{isEditingPlans ? "Edit mode: ON" : "Edit mode: OFF"}</div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingPlans((v) => !v)}
+                disabled={plansSaving}
+              >
+                {isEditingPlans ? "Cancel" : "Edit"}
+              </Button>
+            </div>
 
-          {!plansLoading && plans.length ? (
-            plans.map((p, idx) => {
-              const autoPrice = computePlanAutoPrice(
-                {
-                  years: p.years,
-                  base_price_idr: p.base_price_idr,
-                  discount_percent: p.discount_percent,
-                },
-                planAutoOpts,
-              );
-              const isManual = p.manual_override === true;
-              const monthsForMarketing = Math.round(Math.max(0.5, asNumber(p.years, 1)) * 12);
-
-              return (
-                <div key={`${p.years}-${idx}`} className="grid min-w-0 gap-2 rounded-md border bg-muted/20 p-3 md:grid-cols-12">
-                  <div className="min-w-0 md:col-span-2">
-                    <Label className="text-xs">Years</Label>
-                    <Input
-                      className="w-full"
-                      value={String(p.years)}
-                      onChange={(e) =>
-                        setPlans((prev) =>
-                          prev.map((x, i) => {
-                            if (i !== idx) return x;
-                            const years = asNumber(e.target.value);
-                            const next = { ...x, years };
-                            if (!next.manual_override) next.price_usd = computePlanAutoPrice(next, planAutoOpts);
-                            return next;
-                          }),
-                        )
-                      }
-                      inputMode="decimal"
-                      disabled={plansSaving || !isEditingPlans}
-                    />
+            <div className="grid gap-2 rounded-md border bg-muted/20 p-3 sm:grid-cols-12">
+              <div className="sm:col-span-4">
+                <Label className="text-xs">Harga dasar / tahun</Label>
+                <Input
+                  className="w-full"
+                  value={String(baseYearMeta.value ?? 0)}
+                  onChange={(e) => setBaseYearForAll(asNumber(e.target.value, 0), planAutoOpts)}
+                  inputMode="decimal"
+                  disabled={plansSaving || !isEditingPlans}
+                />
+              </div>
+              <div className="sm:col-span-8">
+                <div className="text-[11px] text-muted-foreground">
+                  Input sekali, otomatis menghitung harga untuk 1/2/3 tahun sesuai diskon masing-masing plan.
+                </div>
+                {baseYearMeta.mixed ? (
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    Catatan: sebelumnya ada beberapa nilai “harga dasar” berbeda—nilai ini akan disamakan saat kamu edit.
                   </div>
+                ) : null}
+              </div>
+            </div>
 
-                  <div className="min-w-0 md:col-span-4">
-                    <Label className="text-xs">Label</Label>
-                    <Input
-                      className="w-full"
-                      value={p.label}
-                      onChange={(e) =>
-                        setPlans((prev) => prev.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x)))
-                      }
-                      disabled={plansSaving || !isEditingPlans}
-                    />
-                  </div>
+            {plansLoading ? <div className="text-sm text-muted-foreground">Loading...</div> : null}
 
-                  <div className="min-w-0 md:col-span-4">
-                    <Label className="text-xs">Pricing</Label>
+            {!plansLoading && plans.length ? (
+              plans.map((p, idx) => {
+                const autoPrice = computePlanAutoPrice(
+                  {
+                    years: p.years,
+                    base_price_idr: p.base_price_idr,
+                    discount_percent: p.discount_percent,
+                  },
+                  planAutoOpts,
+                );
+                const isManual = p.manual_override === true;
 
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <div className="min-w-0">
-                        <Label className="text-[11px] text-muted-foreground">Diskon %</Label>
-                        <Input
-                          className="w-full"
-                          value={String(p.discount_percent ?? 0)}
-                          onChange={(e) =>
-                            setPlans((prev) =>
-                              prev.map((x, i) => {
-                                if (i !== idx) return x;
-                                const next = { ...x, discount_percent: clampPercent(e.target.value) };
-                                if (!next.manual_override) next.price_usd = computePlanAutoPrice(next, planAutoOpts);
-                                return next;
-                              }),
-                            )
-                          }
-                          inputMode="decimal"
-                          disabled={plansSaving || !isEditingPlans || isManual}
-                        />
-                      </div>
-
-                      <div className="min-w-0">
-                        <Label className="text-[11px] text-muted-foreground">
-                          Harga / {p.years} tahun{isManual ? " (manual)" : " (auto)"}
-                        </Label>
-                        <Input
-                          className="w-full"
-                          value={String(isManual ? p.override_price_idr ?? p.price_usd ?? 0 : autoPrice)}
-                          onChange={(e) =>
-                            setPlans((prev) =>
-                              prev.map((x, i) =>
-                                i === idx
-                                  ? {
-                                      ...x,
-                                      override_price_idr: asNumber(e.target.value, 0),
-                                      price_usd: asNumber(e.target.value, 0),
-                                    }
-                                  : x,
-                              ),
-                            )
-                          }
-                          inputMode="decimal"
-                          disabled={plansSaving || !isEditingPlans || !isManual}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-1 text-[11px] text-muted-foreground">
-                      {isMarketingPackage
-                        ? `Dasar: ${baseYearMeta.value ?? 0} × ${monthsForMarketing} bulan (${p.years} tahun)`
-                        : `Dasar: ${baseYearMeta.value ?? 0} × ${p.years} tahun`}
-                    </div>
-
-                    <div className="mt-2 flex items-center justify-between rounded-md border bg-background/50 px-3 py-2">
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-medium text-foreground">Override: Manual</div>
-                        <div className="text-[11px] text-muted-foreground">Saat aktif, auto-calc dikunci.</div>
-                      </div>
-                      <Switch
-                        checked={isManual}
-                        onCheckedChange={(v) =>
+                return (
+                  <div key={`${p.years}-${idx}`} className="grid min-w-0 gap-2 rounded-md border bg-muted/20 p-3 md:grid-cols-12">
+                    <div className="min-w-0 md:col-span-2">
+                      <Label className="text-xs">Years</Label>
+                      <Input
+                        className="w-full"
+                        value={String(p.years)}
+                        onChange={(e) =>
                           setPlans((prev) =>
                             prev.map((x, i) => {
                               if (i !== idx) return x;
-                              if (v) {
-                                const fallback = x.override_price_idr ?? x.price_usd ?? autoPrice;
-                                return { ...x, manual_override: true, override_price_idr: fallback, price_usd: fallback };
-                              }
-                              const next = { ...x, manual_override: false };
-                              next.price_usd = computePlanAutoPrice(next, planAutoOpts);
+                              const years = asNumber(e.target.value);
+                              const next = { ...x, years };
+                              if (!next.manual_override) next.price_usd = computePlanAutoPrice(next, planAutoOpts);
                               return next;
                             }),
                           )
                         }
+                        inputMode="decimal"
                         disabled={plansSaving || !isEditingPlans}
                       />
                     </div>
-                  </div>
 
-                  <div className="min-w-0 md:col-span-2">
-                    <Label className="text-xs">Sort</Label>
-                    <Input
-                      className="w-full"
-                      value={String(p.sort_order)}
-                      onChange={(e) =>
-                        setPlans((prev) => prev.map((x, i) => (i === idx ? { ...x, sort_order: asNumber(e.target.value) } : x)))
-                      }
-                      inputMode="numeric"
-                      disabled={plansSaving || !isEditingPlans}
-                    />
-                  </div>
+                    <div className="min-w-0 md:col-span-4">
+                      <Label className="text-xs">Label</Label>
+                      <Input
+                        className="w-full"
+                        value={p.label}
+                        onChange={(e) =>
+                          setPlans((prev) => prev.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x)))
+                        }
+                        disabled={plansSaving || !isEditingPlans}
+                      />
+                    </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 md:col-span-12">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={p.is_active ? "default" : "secondary"}>{p.is_active ? "On" : "Off"}</Badge>
+                    <div className="min-w-0 md:col-span-4">
+                      <Label className="text-xs">Pricing</Label>
+
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="min-w-0">
+                          <Label className="text-[11px] text-muted-foreground">Diskon %</Label>
+                          <Input
+                            className="w-full"
+                            value={String(p.discount_percent ?? 0)}
+                            onChange={(e) =>
+                              setPlans((prev) =>
+                                prev.map((x, i) => {
+                                  if (i !== idx) return x;
+                                  const next = { ...x, discount_percent: clampPercent(e.target.value) };
+                                  if (!next.manual_override) next.price_usd = computePlanAutoPrice(next, planAutoOpts);
+                                  return next;
+                                }),
+                              )
+                            }
+                            inputMode="decimal"
+                            disabled={plansSaving || !isEditingPlans || isManual}
+                          />
+                        </div>
+
+                        <div className="min-w-0">
+                          <Label className="text-[11px] text-muted-foreground">
+                            Harga / {p.years} tahun{isManual ? " (manual)" : " (auto)"}
+                          </Label>
+                          <Input
+                            className="w-full"
+                            value={String(isManual ? p.override_price_idr ?? p.price_usd ?? 0 : autoPrice)}
+                            onChange={(e) =>
+                              setPlans((prev) =>
+                                prev.map((x, i) =>
+                                  i === idx
+                                    ? {
+                                        ...x,
+                                        override_price_idr: asNumber(e.target.value, 0),
+                                        price_usd: asNumber(e.target.value, 0),
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                            inputMode="decimal"
+                            disabled={plansSaving || !isEditingPlans || !isManual}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-1 text-[11px] text-muted-foreground">{`Dasar: ${baseYearMeta.value ?? 0} × ${p.years} tahun`}</div>
+
+                      <div className="mt-2 flex items-center justify-between rounded-md border bg-background/50 px-3 py-2">
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-medium text-foreground">Override: Manual</div>
+                          <div className="text-[11px] text-muted-foreground">Saat aktif, auto-calc dikunci.</div>
+                        </div>
+                        <Switch
+                          checked={isManual}
+                          onCheckedChange={(v) =>
+                            setPlans((prev) =>
+                              prev.map((x, i) => {
+                                if (i !== idx) return x;
+                                if (v) {
+                                  const fallback = x.override_price_idr ?? x.price_usd ?? autoPrice;
+                                  return { ...x, manual_override: true, override_price_idr: fallback, price_usd: fallback };
+                                }
+                                const next = { ...x, manual_override: false };
+                                next.price_usd = computePlanAutoPrice(next, planAutoOpts);
+                                return next;
+                              }),
+                            )
+                          }
+                          disabled={plansSaving || !isEditingPlans}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 md:col-span-2">
+                      <Label className="text-xs">Sort</Label>
+                      <Input
+                        className="w-full"
+                        value={String(p.sort_order)}
+                        onChange={(e) =>
+                          setPlans((prev) =>
+                            prev.map((x, i) => (i === idx ? { ...x, sort_order: asNumber(e.target.value) } : x)),
+                          )
+                        }
+                        inputMode="numeric"
+                        disabled={plansSaving || !isEditingPlans}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 md:col-span-12">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={p.is_active ? "default" : "secondary"}>{p.is_active ? "On" : "Off"}</Badge>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPlans((prev) => prev.map((x, i) => (i === idx ? { ...x, is_active: !x.is_active } : x)))}
+                          disabled={plansSaving || !isEditingPlans}
+                        >
+                          Toggle
+                        </Button>
+                      </div>
                       <Button
                         type="button"
-                        size="sm"
                         variant="outline"
-                        onClick={() => setPlans((prev) => prev.map((x, i) => (i === idx ? { ...x, is_active: !x.is_active } : x)))}
+                        size="icon"
+                        onClick={() => setPlans((prev) => prev.filter((_, i) => i !== idx))}
                         disabled={plansSaving || !isEditingPlans}
+                        aria-label="Remove plan"
                       >
-                        Toggle
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setPlans((prev) => prev.filter((_, i) => i !== idx))}
-                      disabled={plansSaving || !isEditingPlans}
-                      aria-label="Remove plan"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-              );
-            })
-          ) : !plansLoading ? (
-            <div className="text-sm text-muted-foreground">No plans yet. Click “Add Plan”.</div>
-          ) : null}
+                );
+              })
+            ) : !plansLoading ? (
+              <div className="text-sm text-muted-foreground">No plans yet. Click “Add Plan”.</div>
+            ) : null}
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                setPlans((prev) => [
-                  ...prev,
-                  {
-                    years: 1,
-                    label: "1 Year",
-                    base_price_idr: baseYearMeta.value ?? 0,
-                    discount_percent: 0,
-                    manual_override: true,
-                    override_price_idr: 0,
-                    price_usd: 0,
-                    is_active: true,
-                    sort_order: prev.length ? Math.max(...prev.map((x) => x.sort_order)) + 1 : 1,
-                  },
-                ])
-              }
-              disabled={plansSaving || !isEditingPlans}
-            >
-              <Plus className="h-4 w-4 mr-2" /> Add Plan
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setPlans((prev) => [
+                    ...prev,
+                    {
+                      years: 1,
+                      label: "1 Year",
+                      base_price_idr: baseYearMeta.value ?? 0,
+                      discount_percent: 0,
+                      manual_override: true,
+                      override_price_idr: 0,
+                      price_usd: 0,
+                      is_active: true,
+                      sort_order: prev.length ? Math.max(...prev.map((x) => x.sort_order)) + 1 : 1,
+                    },
+                  ])
+                }
+                disabled={plansSaving || !isEditingPlans}
+              >
+                <Plus className="h-4 w-4 mr-2" /> Add Plan
+              </Button>
 
-            <Button type="button" onClick={savePlans} disabled={plansSaving || !isEditingPlans}>
-              <Save className="h-4 w-4 mr-2" /> Save
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <Button type="button" onClick={savePlans} disabled={plansSaving || !isEditingPlans}>
+                <Save className="h-4 w-4 mr-2" /> Save
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Add-ons (per package) */}
       {!isMarketingPackage ? (
