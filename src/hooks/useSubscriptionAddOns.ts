@@ -11,10 +11,7 @@ export type SubscriptionAddOn = {
   sort_order: number;
 };
 
-export function useSubscriptionAddOns(params: {
-  selected: Record<string, boolean>;
-  packageId: string | null;
-}) {
+export function useSubscriptionAddOns(params: { selected: Record<string, boolean>; packageId: string | null }) {
   const { selected, packageId } = params;
 
   const [loading, setLoading] = useState(false);
@@ -30,15 +27,29 @@ export function useSubscriptionAddOns(params: {
           return;
         }
 
-        const { data, error } = await (supabase as any)
-          .from("subscription_add_ons")
-          .select("id,label,description,price_idr,is_active,sort_order")
-          .eq("is_active", true)
-          .eq("package_id", packageId)
-          .order("sort_order", { ascending: true });
-        if (error) throw error;
+        let nextItems: SubscriptionAddOn[] = [];
+
+        try {
+          // Prefer edge function to avoid RLS blocking public/order pages.
+          const { data, error } = await supabase.functions.invoke<{ items: SubscriptionAddOn[] }>("order-subscription-addons", {
+            body: { packageId },
+          });
+          if (error) throw error;
+          nextItems = ((data as any)?.items ?? []) as any;
+        } catch {
+          // Fallback: if edge function is not reachable (e.g., not deployed yet / CORS),
+          // try direct query using the current authenticated session.
+          const { data, error } = await (supabase as any)
+            .from("subscription_add_ons")
+            .select("id,label,description,price_idr,is_active,sort_order")
+            .eq("package_id", packageId)
+            .or("is_active.eq.true,is_active.is.null")
+            .order("sort_order", { ascending: true });
+          if (!error) nextItems = (data ?? []) as any;
+        }
+
         if (!mounted) return;
-        setItems((data ?? []) as any);
+        setItems(nextItems);
       } catch {
         if (mounted) setItems([]);
       } finally {

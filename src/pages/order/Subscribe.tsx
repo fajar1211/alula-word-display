@@ -17,9 +17,12 @@ function formatIdr(value: number) {
 }
 
 function isMonthlyPackageName(name: string | null) {
-  const n = String(name ?? "").toLowerCase().trim();
+  const n = String(name ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
   // Accept variants with suffix like "/bulan" or extra spaces.
-  return n.includes("full digital marketing") || n.includes("blog + social media");
+  return n.includes("full digital marketing") || n.includes("blog + social media") || n.includes("blog+social media");
 }
 
 export default function Subscribe() {
@@ -143,7 +146,7 @@ export default function Subscribe() {
           </CardContent>
         </Card>
 
-        {isMonthly ? <OrderSubscriptionAddOns title="Add-ons (Onboarding)" /> : null}
+        {isMonthly ? <OrderSubscriptionAddOns title="Add-ons (Onboarding)" packageId={state.selectedPackageId ?? pricing.defaultPackageId ?? null} /> : null}
 
         <div className="flex items-center justify-between gap-3">
           <Button type="button" variant="outline" onClick={() => navigate("/order/checkout")}>
