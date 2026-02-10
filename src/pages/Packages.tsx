@@ -474,7 +474,7 @@ export default function Packages() {
                                   ? Math.max(0, base * (1 - discountPercent / 100))
                                   : Math.max(0, normalDisplay * (1 - discountPercent / 100));
 
-                            const suffix = isMonthlyBase ? "/ bulan" : isGrowth && years === 3 ? "/ 3 tahun" : "/ tahun";
+                            const suffix = isMonthlyBase ? "/bulan" : isGrowth && years === 3 ? "/ 3 tahun" : "/ tahun";
                             const afterLabel = isMonthlyBase
                               ? "Harga / bulan setelah diskon"
                               : isGrowth && years === 3
