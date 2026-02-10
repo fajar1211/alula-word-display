@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { OrderLayout } from "@/components/order/OrderLayout";
 import { OrderSummaryCard } from "@/components/order/OrderSummaryCard";
-import { OrderSubscriptionAddOns } from "@/components/order/OrderSubscriptionAddOns";
+import { OrderPackageAddOns } from "@/components/order/OrderPackageAddOns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -146,7 +146,7 @@ export default function Subscribe() {
           </CardContent>
         </Card>
 
-        {isMonthly ? <OrderSubscriptionAddOns title="Add-ons (Onboarding)" packageId={state.selectedPackageId ?? pricing.defaultPackageId ?? null} /> : null}
+        {isMonthly ? <OrderPackageAddOns /> : null}
 
         <div className="flex items-center justify-between gap-3">
           <Button type="button" variant="outline" onClick={() => navigate("/order/checkout")}>
