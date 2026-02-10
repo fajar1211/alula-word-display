@@ -11,11 +11,20 @@ function formatIdr(value: number) {
   return `Rp ${Math.round(value).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
 }
 
-export function OrderSubscriptionAddOns({ title = "Add-ons" }: { title?: string }) {
+export function OrderSubscriptionAddOns({
+  title = "Add-ons",
+  packageId,
+}: {
+  title?: string;
+  /** Fallback untuk kasus state.selectedPackageId belum terisi tapi settings punya defaultPackageId */
+  packageId?: string | null;
+}) {
   const { state, setSubscriptionAddOnSelected } = useOrder();
+  const effectivePackageId = packageId ?? state.selectedPackageId;
+
   const { loading, items, total } = useSubscriptionAddOns({
     selected: state.subscriptionAddOns ?? {},
-    packageId: state.selectedPackageId,
+    packageId: effectivePackageId,
   });
 
   const hasAny = useMemo(() => Object.values(state.subscriptionAddOns ?? {}).some(Boolean), [state.subscriptionAddOns]);
