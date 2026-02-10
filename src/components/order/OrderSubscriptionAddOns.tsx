@@ -4,27 +4,18 @@ import { useOrder } from "@/contexts/OrderContext";
 import { useSubscriptionAddOns } from "@/hooks/useSubscriptionAddOns";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 function formatIdr(value: number) {
   return `Rp ${Math.round(value).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
 }
 
-export function OrderSubscriptionAddOns({
-  title = "Add-ons",
-  packageId,
-}: {
-  title?: string;
-  /** Fallback untuk kasus state.selectedPackageId belum terisi tapi settings punya defaultPackageId */
-  packageId?: string | null;
-}) {
+export function OrderSubscriptionAddOns({ title = "Add-ons" }: { title?: string }) {
   const { state, setSubscriptionAddOnSelected } = useOrder();
-  const effectivePackageId = packageId ?? state.selectedPackageId;
-
   const { loading, items, total } = useSubscriptionAddOns({
     selected: state.subscriptionAddOns ?? {},
-    packageId: effectivePackageId,
+    packageId: state.selectedPackageId,
   });
 
   const hasAny = useMemo(() => Object.values(state.subscriptionAddOns ?? {}).some(Boolean), [state.subscriptionAddOns]);
@@ -42,47 +33,38 @@ export function OrderSubscriptionAddOns({
         ) : (
           <div className="grid gap-3">
             {items.map((a) => {
-              const selected = Boolean(state.subscriptionAddOns?.[a.id]);
+              const checked = Boolean(state.subscriptionAddOns?.[a.id]);
               const descLines = String(a.description ?? "")
                 .split(/\r?\n/)
                 .map((s) => s.trim())
                 .filter(Boolean);
 
-              const dec = () => setSubscriptionAddOnSelected(a.id, false);
-              const inc = () => setSubscriptionAddOnSelected(a.id, true);
-
               return (
-                <div key={a.id} className="rounded-xl border bg-card p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground break-words">{a.label}</p>
-                      {descLines.length ? (
-                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
-                          {descLines.map((line, i) => (
-                            <li key={i} className="break-words">
-                              {line}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
+                <label key={a.id} className="flex items-start gap-3 rounded-xl border bg-card p-4 cursor-pointer">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(v) => setSubscriptionAddOnSelected(a.id, Boolean(v))}
+                    className="mt-1"
+                  />
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{formatIdr(Number(a.price_idr ?? 0))}</Badge>
-                        {selected ? <Badge variant="outline">Dipilih</Badge> : null}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground break-words">{a.label}</p>
+                        {descLines.length ? (
+                          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                            {descLines.map((line, i) => (
+                              <li key={i} className="break-words">
+                                {line}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={dec} disabled={!selected}>
-                        -
-                      </Button>
-                      <span className="min-w-[44px] text-center text-sm font-medium text-foreground tabular-nums">{selected ? 1 : 0}</span>
-                      <Button type="button" variant="outline" size="sm" onClick={inc} disabled={selected}>
-                        +
-                      </Button>
+                      <Badge variant="secondary">{formatIdr(Number(a.price_idr ?? 0))}</Badge>
                     </div>
                   </div>
-                </div>
+                </label>
               );
             })}
           </div>
@@ -98,7 +80,7 @@ export function OrderSubscriptionAddOns({
         {hasAny ? (
           <p className="text-xs text-muted-foreground">Biaya add-ons akan ditambahkan ke total pembayaran.</p>
         ) : (
-          <p className="text-xs text-muted-foreground">Opsional — pilih add-ons jika diperlukan.</p>
+          <p className="text-xs text-muted-foreground">Opsional — centang jika diperlukan.</p>
         )}
       </CardContent>
     </Card>
