@@ -152,6 +152,7 @@ export function useOrderPublicSettings(domain?: string, selectedPackageId?: stri
   const [defaultPackageId, setDefaultPackageId] = useState<string | null>(null);
   const [tldPrices, setTldPrices] = useState<Array<{ tld: string; price_usd: number }>>([]);
   const [packagePriceUsd, setPackagePriceUsd] = useState<number | null>(null);
+  const [packageName, setPackageName] = useState<string | null>(null);
 
   const [durationRows, setDurationRows] = useState<
     Array<{ duration_months: number; discount_percent: number; is_active: boolean; sort_order: number }> | null
@@ -190,7 +191,7 @@ export function useOrderPublicSettings(domain?: string, selectedPackageId?: stri
 
         if (effectivePkgId) {
           const [{ data: pkgRow }, { data: prices }, { data: durations }] = await Promise.all([
-            (supabase as any).from("packages").select("price").eq("id", effectivePkgId).maybeSingle(),
+            (supabase as any).from("packages").select("price,name").eq("id", effectivePkgId).maybeSingle(),
             (supabase as any).from("domain_tld_prices").select("tld,price_usd").eq("package_id", effectivePkgId),
             (supabase as any)
               .from("package_durations")
@@ -202,6 +203,7 @@ export function useOrderPublicSettings(domain?: string, selectedPackageId?: stri
 
           const p = safeNumber((pkgRow as any)?.price);
           setPackagePriceUsd(p ?? null);
+          setPackageName(safeString((pkgRow as any)?.name).trim() || null);
 
           setTldPrices(
             Array.isArray(prices)
@@ -223,6 +225,7 @@ export function useOrderPublicSettings(domain?: string, selectedPackageId?: stri
           );
         } else {
           setPackagePriceUsd(null);
+          setPackageName(null);
           setTldPrices([]);
           setDurationRows(null);
         }
@@ -233,7 +236,7 @@ export function useOrderPublicSettings(domain?: string, selectedPackageId?: stri
         setLoading(false);
       }
     })();
-  }, [selectedPackageId]);
+  }, [selectedPackageId, domain]);
 
   const domainPriceUsd = useMemo(() => {
     if (!tld) return null;
@@ -256,6 +259,7 @@ export function useOrderPublicSettings(domain?: string, selectedPackageId?: stri
     pricing: {
       defaultPackageId,
       selectedPackageId: selectedPackageId ?? null,
+      packageName,
       tldPrices,
       domainPriceUsd,
       domainTld: tld,
